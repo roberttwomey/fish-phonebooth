@@ -63,9 +63,14 @@ if __name__ == '__main__':
 	doWrite = args.dowrite
 	doHeadless = args.doheadless
 	doUndistort = args.doundistort
-	minBlobSize = args.minblob
-	maxBlobSize = args.maxblob
-	searchRadius = args.radius
+	# minBlobSize = args.minblob
+	# maxBlobSize = args.maxblob
+	# searchRadius = args.radius
+	minBlobSize = 600.0
+	maxBlobSize = 50000.0
+	searchRadius = 70.0
+	
+	MAX_LENGTH = 200#20
 	# outpath = args.outpath
 	# files = args.files
 	# infile = args.infile[0]
@@ -73,7 +78,7 @@ if __name__ == '__main__':
 
 	# print("Reading", infile)
 
-	outputsize = 1280
+	
 
 	# kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
 	# kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
@@ -82,22 +87,27 @@ if __name__ == '__main__':
 	fullResolution = True
 	# fullResolution = False
 
+	# video file
 	# cap = cv2.VideoCapture(infile)
 	
-	# cap = cv2.VideoCapture("rtsp://admin:RedCamera@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
+	# network fisheye cam
 	cap = cv2.VideoCapture("rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
+	cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2880)
+	cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+	cap.set(cv2.CAP_PROP_FPS, 15)
+	# outputsize = 2160
+	outputsize = 1440
 
+	# usb cam
 	# cap = cv2.VideoCapture(0)
 	# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)
 	# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944)
-	# cap.set(cv2.CAP_PROP_FPS, 20)
+	# cap.set(cv2.CAP_PROP_FPS, 15)
+	# outputsize = 1944
 
 	if cap is None:
 		print("didn't work")
 		exit(0)
-	# os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
-	# cap = cv2.VideoCapture("rtsp://192.168.1.108:554/camera", cv2.CAP_FFMPEG)
-	# cap = cv2.VideoCapture("rtsp://192.168.1.108:554/camera")
 
 	# print cap.get(1), cap.get(2), cap.get(3), cap.get(4)
 	width = cap.get(3)
@@ -117,7 +127,8 @@ if __name__ == '__main__':
 
 
 	circlemask = np.zeros((outheight, outwidth), np.uint8)
-	cv2.circle(circlemask, (int(outwidth/2), int(outheight/2)), 280, (255, 255, 255), -1)
+	cv2.circle(circlemask, (int(outwidth/2), int(outheight/2)), int(outputsize*0.45), (255, 255, 255), -1)
+	# cv2.circle(circlemask, (int(outwidth), int(outheight)), 280, (255, 255, 255), -1)
 
 	# unwarp fisheye
 	# cx = outwidth/2.0
@@ -247,7 +258,6 @@ if __name__ == '__main__':
 				# radius = int(radius)
 				# cv2.circle(frame, center, radius, (255, 0, 0), 3)
 
-
 				if area > minBlobSize and area < maxBlobSize:
 					if fullResolution:
 						largecnt = []
@@ -318,8 +328,11 @@ if __name__ == '__main__':
 		# ret, thresh = cv2.threshold(trailsmask, 0, 255, cv2.THRESH_BINARY)
 		# frame = cv2.bitwise_and(frame, frame, mask=thresh)
 
+		while len(trails) > MAX_LENGTH:
+			trails.pop(0)
+
 		for pts in trails:
-			for i in range(1, len(pts)):
+			for i in range(1, len(pts)-1):
 				# if either of the tracked points are None, ignore
 				# them
 				if pts[i - 1] is None or pts[i] is None:
@@ -334,6 +347,7 @@ if __name__ == '__main__':
 				if fullResolution:
 					# full size
 					# cv2.line(frame, (np.float32(pts[i-1][0]/scalef), np.float32(pts[i-1][1]/scalef)), (np.float32(pts[i][0]/scalef), np.float32(pts[i][1]/scalef)), (0, 0, 255), thickness, cv2.LINE_AA)
+					# print(pts[i-1], pts[i])
 					cv2.line(frame, (int(pts[i-1][0]), int(pts[i-1][1])), (int(pts[i][0]), int(pts[i][1])), (0, 0, 255), thickness, cv2.LINE_AA)
 				else:
 					# reduced size
@@ -356,6 +370,12 @@ if __name__ == '__main__':
 			frame = cv2.resize(frame, (outwidth,outheight))
 
 		if not doHeadless:
+			# big_image = np.zeros((outwidth, outheight, 3), np.uint8)
+			# x_offset=outwidth-frame.shape[1]
+			# y_offset=outheight-frame.shape[0]
+			# big_image[y_offset:y_offset+frame.shape[0], x_offset:x_offset+frame.shape[1]] = frame
+			# cv2.imshow('tracking', big_image)
+			
 			cv2.imshow('tracking',frame)
 			# cv2.imshow('fgbg',fgmask)
 			# cv2.imshow('mask',thresh)
