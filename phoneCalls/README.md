@@ -7,4 +7,16 @@ pip install twilio
 Or go here
 https://www.twilio.com/docs/libraries/reference/twilio-python/index.html
 
-That should be everything ?
+Add sid and auth token to makeCalls.py
+
+Set your desired user number and times in the calls to the function
+
+Store a New Phone Number/User:
+```bash
+python addNewUser
+```
+
+Make calls:
+```bash
+python makeCalls
+```
