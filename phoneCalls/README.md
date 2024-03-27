@@ -13,10 +13,10 @@ Set your desired user number and times in the calls to the function
 
 Store a New Phone Number/User:
 ```bash
-python addNewUser
+python addNewUser.py
 ```
 
 Make calls:
 ```bash
-python makeCalls
+python makeCalls.py
 ```
