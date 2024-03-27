@@ -13,8 +13,8 @@ with open(filename) as fp:
 
 # Find your Account SID and Auth Token at twilio.com/console
 # and set the environment variables. See http://twil.io/secure
-account_sid = ''
-auth_token = ''
+account_sid = 'AC2d6f9817eb118f2a87ada15b6fad5257'
+auth_token = 'fdc9ceee32b80907d77f8a288a8bf22b'
 client = Client(account_sid, auth_token)
 twilPhone = '+18557017864'
 
