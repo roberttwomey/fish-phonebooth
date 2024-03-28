@@ -16,7 +16,7 @@ with open(filename) as fp:
 account_sid = ''
 auth_token = ''
 client = Client(account_sid, auth_token)
-twilPhone = '+18557017864'
+twilPhone = ''
 
 
 
