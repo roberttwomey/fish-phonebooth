@@ -390,6 +390,9 @@ if __name__ == '__main__':
 		k = cv2.waitKey(30) & 0xff
 		if k == 27:
 		   break
+		if k == ord('r'):
+			trails.clear()
+			# fgbg.clear()
 
 	print("done. ")
 	# print "freeing resources"
