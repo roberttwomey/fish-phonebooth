@@ -7,8 +7,8 @@ from datetime import datetime
 import pyaudio
 
 # OCEAN INPUT
-oceanfile = "../media/ocean2.wav"
-speechfile = "../media/20240329.wav"
+oceanfile = "media/ocean2.wav"
+speechfile = "media/20240329.wav"
 
 # MIC RECORDING
 chunk = 1024  # Record in chunks of 1024 samples
@@ -106,7 +106,7 @@ print('Finished recording')
 # Save the recorded data as a WAV file
 current_timestamp = datetime.now()
 formatted_timestamp = current_timestamp.strftime('%Y%m%d-%H%M%S')
-filename = f"../recordings/{formatted_timestamp}-mic.wav"
+filename = f"recordings/{formatted_timestamp}-mic.wav"
 
 wf3 = wave.open(filename, 'wb')
 wf3.setnchannels(channels)
