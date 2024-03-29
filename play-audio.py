@@ -18,8 +18,9 @@ fs = 48000  # Record at 44100 samples per second
 seconds = 3
 # filename = "output.wav"
 
-headphone_device = 0
-motu_device = 3
+microphone_device = 3
+headphone_device = 2
+motu_device = 0
 
 try: 
     with wave.open(oceanfile, 'rb') as wf:
@@ -52,7 +53,7 @@ try:
             oceanstream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                             channels=wf.getnchannels(),
                             rate=wf.getframerate(),
-                            output_device_index=headphone_device,
+                            output_device_index=motu_device,
                             output=True,
                             stream_callback=callback)
             
@@ -60,7 +61,7 @@ try:
             speechstream = p.open(format=p.get_format_from_width(wf2.getsampwidth()),
                             channels=wf2.getnchannels(),
                             rate=wf2.getframerate(),
-                            output_device_index=motu_device,
+                            output_device_index=headphone_device,
                             output=True,
                             stream_callback=callback2)
 
@@ -70,6 +71,7 @@ try:
                 channels=channels,
                 rate=fs,
                 frames_per_buffer=chunk,
+                input_device_index=microphone_device,
                 input=True)
 
             frames = []  # Initialize array to store frames
