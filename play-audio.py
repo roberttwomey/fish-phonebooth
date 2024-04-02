@@ -117,4 +117,4 @@ wf3.setframerate(fs)
 wf3.writeframes(b''.join(frames))
 wf3.close()
 
-print('wrote to disk')
+print(f"wrote {filename} to disk")
