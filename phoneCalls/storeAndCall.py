@@ -1,5 +1,6 @@
 import json
 import datetime
+import subprocess
 from os import path
 from time import sleep
 
@@ -8,8 +9,8 @@ from time import sleep
 from makeCalls import fishPhoneCall
 
 inNum = '0'
-firstCallDelay = 5 # 181 # call delay in seconds
-endCallDelay = 30 # 401 # call delay in seconds
+firstCallDelay =  181 # call delay in seconds
+endCallDelay =  401 # call delay in seconds
 
 # def readserial(comport, baudrate):
 
@@ -21,7 +22,8 @@ endCallDelay = 30 # 401 # call delay in seconds
 #             inNum = data
 #             print(inNum)
 #             # time.sleep(500)
-#             return inNum
+#             return inNum--
+
 
 def addNum(inNum):
     # Stores the current time
@@ -57,6 +59,8 @@ def addNum(inNum):
                                 separators=(',',': '))
         
         print("added ", listObj[uid])
+        subprocess.Popen(['python', 'play-audio.py'])
+        subprocess.Popen(['python', '../../govee-btled-controller/descent.py'])
         fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
         fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
 
@@ -64,6 +68,8 @@ def addNum(inNum):
     
     elif add == 1: 
         print("Number already stored at uid: ", uid)
+        subprocess.Popen(['python', 'play-audio.py'])
+        subprocess.Popen(['python', '../../govee-btled-controller/descent.py'])
         fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
         fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
 

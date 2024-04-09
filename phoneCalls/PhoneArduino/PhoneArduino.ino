@@ -42,25 +42,37 @@
 
 // include the library code:
 #include <LiquidCrystal.h>
+// #include <Keyboard.h>
 
-#include <Keypad.h>
+// #include <Keypad.h>
 
-const byte ROWS = 4; //four rows
-const byte COLS = 3; //four columns
-char keys[ROWS][COLS] = {
-  {'1','2','3'},
-  {'4','5','6'},
-  {'7','8','9'},
-  {'*','0','#'}
-};
+// const byte ROWS = 4; //four rows
+// const byte COLS = 3; //four columns
+// char keys[ROWS][COLS] = {
+//   {'1','2','3'},
+//   {'4','5','6'},
+//   {'7','8','9'},
+//   {'*','0','#'}
+// };
 
-byte rowPins[ROWS] = {A4, A3, A2, A1}; //connect to the row pinouts of the keypad
-byte colPins[COLS] = {7, 6, 5}; //connect to the column pinouts of the keypad
+// byte rowPins[ROWS] = {A4, A3, A2, A1}; //connect to the row pinouts of the keypad
+// byte colPins[COLS] = {7, 6, 5}; //connect to the column pinouts of the keypad
 
-Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+// Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 // initialize the library with the numbers of the interface pins
-LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
+
+const int pin_RS = 8; 
+const int pin_EN = 9; 
+const int pin_d4 = 4; 
+const int pin_d5 = 5; 
+const int pin_d6 = 6; 
+const int pin_d7 = 7; 
+
+const int pin_BL = 10; 
+
+LiquidCrystal lcd( pin_RS,  pin_EN,  pin_d4,  pin_d5,  pin_d6,  pin_d7);
+// LiquidCrystal lcd(8, 9, 10, 11, 12, 13);
 
 int col = 0;
 String x;
@@ -69,11 +81,15 @@ char num[11] = {'*','*','*','*','*','*','*','*','*','*'};
 
 void setup() {
   // set up the LCD's number of columns and rows:
+  // analogWrite(3,Contrast);
   lcd.begin(16, 2);
   // Print a message to the LCD.
   lcd.print("Enter Phone #: ");
   
   lcd.setCursor(0, 1);
+  lcd.print("+1");
+
+  lcd.setCursor(3, 1);
   lcd.print(num);
   
   Serial.begin(9600);
@@ -95,18 +111,18 @@ void loop() {
 
 
   
-  char key = keypad.getKey();
+  char key = Serial.read();
   
   if (key){
     
     if (key == '*' && col >= 0){
       col--;
-      lcd.setCursor(col, 1);
+      lcd.setCursor(col+3, 1);
       lcd.print('*');
       num[col] = '*';
     }
     else if (col <= 9 && key != '#'){
-      lcd.setCursor(col, 1);
+      lcd.setCursor(col+3, 1);
       //Serial.println(key);
       lcd.print(key);
       num[col] = key;
@@ -121,12 +137,14 @@ void loop() {
       for(int i = 0; i < 10; i++){
         num[i] = '*';
       }
-      lcd.print(num);
+      lcd.print("                     ");
       lcd.setCursor(0, 0);
-      lcd.print("Thank You! Enjoy!");
-      delay(5000);
+      lcd.print("Sensing . . .    ");
+      delay(401000);
       lcd.setCursor(0, 0);
       lcd.print("Enter Phone #:      ");
+      lcd.setCursor(0, 1);
+      lcd.print("+1 **********");
     }
   }
 }
