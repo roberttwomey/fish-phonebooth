@@ -29,13 +29,13 @@ filename = 'numbers.json'
 with open(filename) as fp:
     users = json.load(fp)
 
-def fishPhoneCall(thisUser, hour, minute, second):
-    pygame.init()
+def fishPhoneCall(thisUser, hour, minute):
+    # pygame.init()
 
     # creating display
-    display = pygame.display.set_mode((300, 300))
+    # display = pygame.display.set_mode((300, 300))
 
-    print("waiting until", hour, ":", minute, ":", second, "to call\n")
+    print("waiting until", hour, ":", minute, ":", "to call\n")
     
     while True:
 
@@ -46,17 +46,14 @@ def fishPhoneCall(thisUser, hour, minute, second):
         with open(filename) as fp:
             users = json.load(fp)
 
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_NUMLOCK:    
-                        number = 'END'
-                        return number
-                elif event.key == pygame.K_BACKQUOTE:    
-                        number = 'END'
-                        return number
+        # for event in pygame.event.get():
+        #     if event.type == pygame.KEYDOWN:
+        #         if event.key == pygame.K_NUMLOCK:    
+        #                 number = 'END'
+        #                 return number
 
         # Waits until the designated time to make the call
-        if currTime.hour == hour and currTime.minute == minute and currTime.second == second:
+        if currTime.hour == hour and currTime.minute == minute :#and currTime.second == second:
 
             #get the phone number of specified user
             phoneNum = users[thisUser]['phoneNum']
@@ -87,6 +84,8 @@ def fishPhoneCall(thisUser, hour, minute, second):
                 if number_validation.carrier:
                     print("The number is valid and the carrier is:", number_validation.carrier['name'])
                     call = client.calls.create(
+                                        record=True,
+                                        recording_track='dual',
                                         url=audio_url,
                                         to=phoneNum,
                                         from_=twilPhone
@@ -171,7 +170,22 @@ print("The current time is", currTime.hour, ":", currTime.minute, "\n")
 
 #randomFishCall(currTime.hour, currTime.minute)
 
-#fishPhoneCall(1, currTime.hour, currTime.minute, '59')
+# fishPhoneCall(0, currTime.hour, currTime.minute, '59')
 # fishPhoneCall(random.rand, 11, 9)
 # fishPhoneCall(0, 11, 10)
 # fishPhoneCall(0, 11, 11)
+
+# while True:
+#     time.sleep(60)
+time = datetime.datetime.now()
+
+afterCallTime = time + datetime.timedelta(minutes=10)
+afterCallTime2 = time + datetime.timedelta(minutes=25)
+userL = len(users)-1
+ 
+# fishPhoneCall(len(users)-1, afterCallTime.hour, afterCallTime.minute)
+
+fishPhoneCall(userL, afterCallTime.hour, afterCallTime.minute)
+fishPhoneCall(0, afterCallTime.hour, afterCallTime.minute)
+fishPhoneCall(userL, afterCallTime2.hour, afterCallTime2.minute)
+fishPhoneCall(0, afterCallTime2.hour, afterCallTime2.minute)
