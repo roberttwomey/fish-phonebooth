@@ -70,7 +70,7 @@ if __name__ == '__main__':
 	maxBlobSize = 50000.0
 	searchRadius = 70.0
 	
-	MAX_LENGTH = 200#20
+	MAX_LENGTH = 50#20
 	# outpath = args.outpath
 	# files = args.files
 	# infile = args.infile[0]
@@ -94,12 +94,16 @@ if __name__ == '__main__':
 	cap = cv2.VideoCapture("rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
 	cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2880)
 	cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
+	# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
+	# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 	cap.set(cv2.CAP_PROP_FPS, 15)
 	# outputsize = 2160
 	outputsize = 1440
 
 	# usb cam
 	# cap = cv2.VideoCapture(0)
+	# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)
+	# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944)
 	# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2592)
 	# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1944)
 	# cap.set(cv2.CAP_PROP_FPS, 15)

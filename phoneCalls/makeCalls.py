@@ -91,70 +91,92 @@ def fishPhoneCall(thisUser, hour, minute, second):
                                         to=phoneNum,
                                         from_=twilPhone
                                     )
+                    printTime = currTime.strftime("%c")
+                    print("Called user", thisUser, "with", this_audio,"at", phoneNum, "on", printTime, "\n")
                 else:
                     print("The number is not valid.")
                     return 'INVALID'
             except Exception as e:
                 print("An error occurred:", e)
-                print("calling Reid Instead")
-                call = client.calls.create(
-                                        url=audio_url,
-                                        to='+13088800470',
-                                        from_=twilPhone
-                                    )
+                print("calling random number instead")
+                randomFishCall()
+                # print("calling Reid Instead")
+                # call = client.calls.create(
+                #                         url=audio_url,
+                #                         to='+13088800470',
+                #                         from_=twilPhone
+                #                     )
 
             
 
-            printTime = currTime.strftime("%c")
-            print("Called user", thisUser, "with", this_audio,"at", phoneNum, "on", printTime, "\n")
+            
             return 'CALLED'  
         
-def randomFishCall(hour, minute):
+def randomFishCall():
 
     
 
-    print("waiting until", hour, ":", minute, "to call\n")
+    #print("waiting until", hour, ":", minute, "to call\n")
     
-    while True:
+    # while True:
 
-        currTime = datetime.datetime.now()
+        #currTime = datetime.datetime.now()
 
-        with open(filename) as fp:
-            users = json.load(fp)
-        
-        thisUser = random.randint(0, len(users)-1)
+    with open(filename) as fp:
+        users = json.load(fp)
+    
+    thisUser = random.randint(0, len(users)-1)
+    #thisUser = 0
 
-        # Waits until the designated time to make the call
-        if currTime.hour == hour and currTime.minute == minute:
+    # Waits until the designated time to make the call
+    # if currTime.hour == hour and currTime.minute == minute:
 
-            #get the phone number of specified user
-            phoneNum = users[2]['phoneNum']
+        #get the phone number of specified user
+    phoneNum = users[thisUser]['phoneNum']
+    #phoneNum = "+10000000000"
 
-            # list of fish tracks
-            fish_audio = [
-            'mixdown-2track.mp3',
-            'newplaytest3.mp3',
-            'fish01.mp3',
-            'fish02.mp3',
-            'foghorn.mp3',
-            'whoop.mp3'
-            ]
-            
+    # list of fish tracks
+    fish_audio = [
+    'mixdown-2track.mp3',
+    'newplaytest3.mp3',
+    'fish01.mp3',
+    'fish02.mp3',
+    'foghorn.mp3',
+    'whoop.mp3'
+    ]
+    
 
-            # Pick and locate a random track
-            this_audio = fish_audio[random.randint(0, len(fish_audio)-1)]
-            audio_url = 'https://roberttwomey.com/downloads/' + this_audio
-            #print(audio_url)
+    # Pick and locate a random track
+    this_audio = fish_audio[random.randint(0, len(fish_audio)-1)]
+    audio_url = 'https://roberttwomey.com/downloads/' + this_audio
+    #print(audio_url)
 
+    try:
+        # Replace 'phone_number' with the number you want to validate
+        number_validation = client.lookups \
+                                .phone_numbers(phoneNum) \
+                                .fetch(type=['carrier'])
+
+        # If the number is valid, 'carrier' information will be available
+        if number_validation.carrier:
+            print("The number is valid and the carrier is:", number_validation.carrier['name'])
             call = client.calls.create(
-                                    url=audio_url,
-                                    to=phoneNum,
-                                    from_=twilPhone
-                                )
-
+                                url=audio_url,
+                                to=phoneNum,
+                                from_=twilPhone
+                            )
             printTime = currTime.strftime("%c")
             print("Called user", thisUser, "with", this_audio,"at", phoneNum, "on", printTime, "\n")
-            return
+        else:
+            print("The number is not valid.")
+            return 'INVALID'
+    except Exception as e:
+        print("An error occurred:", e)
+        print("calling skipped")
+        #randomFishCall()
+
+    
+    return "CALLED"
 
 
 print("Number of stored users:", len(users), "\n")
@@ -169,7 +191,7 @@ print("The current time is", currTime.hour, ":", currTime.minute, "\n")
 
 # multiple calls at certain times (make sure to be in time order.)
 
-#randomFishCall(currTime.hour, currTime.minute)
+#randomFishCall()
 
 #fishPhoneCall(1, currTime.hour, currTime.minute, '59')
 # fishPhoneCall(random.rand, 11, 9)

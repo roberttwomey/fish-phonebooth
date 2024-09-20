@@ -23,6 +23,7 @@ endCallDelay =  650#401 # call delay in seconds
 
 arduino = serial.Serial(port='/dev/cu.usbmodem143401', baudrate=9600, timeout=.1) 
 airduino = serial.Serial(port='/dev/cu.usbmodem143301', baudrate=115200, timeout=.1) 
+
 pygame.init()
 
     # creating display
@@ -33,10 +34,13 @@ def write_read(x):
     data = x
     if data == 'n':
         airduino.write(bytes(x, 'utf-8'))
+    elif data == '~':
+        airduino.write(bytes(x, 'utf-8'))
     print(data)
     return data
 	
-	
+subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+#write_read('w')
 
 def takeNum():
     
@@ -211,11 +215,14 @@ dictObj = []
 with open(filename) as fp:
     listObj = json.load(fp)
 
-subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+
 print("Enter Phone # \n")
+write_read('w')
 # inNum = readserial('/dev/cu.usbmodem142301', 9600)
 inNum = takeNum()
 addNum(inNum)
+write_read('n')
+print("Fish Phone Booth Completed")
 # write_read('n')
 
 # print(listObj)
