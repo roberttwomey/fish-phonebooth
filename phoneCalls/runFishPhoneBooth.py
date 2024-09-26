@@ -1,3 +1,4 @@
+#!/opt/homebrew/anaconda3/envs/fishphone/bin/python
 import subprocess
 import os
 from subprocess import check_call
@@ -19,6 +20,8 @@ USB_KEYPAD = os.getenv('USB_KEYPAD')
 
 arduinoDoor = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
 arduino = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
+
+THIS_PYTHON = '/opt/homebrew/anaconda3/envs/fishphone/bin/python'
 
 #arduinoScreen = serial.Serial(port='/dev/cu.usbmodem143401', baudrate=9600, timeout=.1) 
 def write_read():
@@ -52,7 +55,9 @@ while True:
 		print(door)
 
 		if door == "closed":
-			p = subprocess.Popen(['python', 'phoneBoothMain.py'])
+			# p = subprocess.Popen(['python', 'phoneBoothMain.py'])
+			p = subprocess.Popen([THIS_PYTHON, 'phoneBoothMain.py'])
+			# p = subprocess.Popen(['phoneBoothMain.py'])
             
 			#os.system("python phoneBoothMain.py")
 			#time.sleep(10)

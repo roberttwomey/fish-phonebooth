@@ -1,3 +1,4 @@
+#!/opt/homebrew/anaconda3/envs/fishphone/bin/python
 import json
 import datetime
 import subprocess
@@ -33,6 +34,8 @@ arduino = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1)
 airduino = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
 
 pygame.init()
+
+THIS_PYTHON = '/opt/homebrew/anaconda3/envs/fishphone/bin/python'
 
     # creating display
 display = pygame.display.set_mode((300, 300))
