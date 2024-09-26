@@ -4,11 +4,22 @@ from subprocess import check_call
 import serial
 import pyautogui
 import time
+import os
+from os import path
+from dotenv import load_dotenv
+
 ran= False
 oc = ""
 
-arduinoDoor = serial.Serial(port='/dev/cu.usbmodem143301', baudrate=115200, timeout=.1) 
-arduino = serial.Serial(port='/dev/cu.usbmodem143401', baudrate=9600, timeout=.1) 
+# load variables from .env file: 
+load_dotenv()
+
+USB_ONAIR = os.getenv('USB_ONAIR')
+USB_KEYPAD = os.getenv('USB_KEYPAD')
+
+arduinoDoor = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
+arduino = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
+
 #arduinoScreen = serial.Serial(port='/dev/cu.usbmodem143401', baudrate=9600, timeout=.1) 
 def write_read():
     #arduinoDoor.write(bytes(x,   'utf-8'))

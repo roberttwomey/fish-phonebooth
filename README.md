@@ -8,7 +8,7 @@ some of these
 conda create -n fishphone python
 conda activate fishphone
 brew install portaudio
-pip install pyaudio soundfile twilio pyserial pyautogui
+pip install pyaudio soundfile twilio pyserial pyautogui python-dotenv pygame numpy
 ```
 
 if that won't install, add `--break-system-packages`.

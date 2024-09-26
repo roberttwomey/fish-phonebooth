@@ -4,10 +4,15 @@ import asyncio
 import numpy as np
 
 bulb = '74209773-2F79-D43E-5EE9-AEF071CEA34C'
-lightbar1 = '44ADBA7B-66E7-F108-D84B-2C4C87504092'
-lightbar2 = 'B845E65A-83D0-D7DF-EA68-5B0CA817B783'
+# lightbar1 = '44ADBA7B-66E7-F108-D84B-2C4C87504092'
+# lightbar2 = 'B845E65A-83D0-D7DF-EA68-5B0CA817B783'
+lightbar1 = '91C750AC-847E-2B8A-BC4D-2ECF32BD1E43'
+lightbar2 = '993A89E8-1120-F5E0-FA9C-EDF9DA6A1A58'
+darkTime = 403
+startTime = 127
 
 async def main():
+    time.sleep(startTime)
     # Replace this with your LED's MAC address
     thismac = lightbar1
     # thismac = lightbar1
@@ -58,29 +63,40 @@ async def main():
     await led.set_color_bar('blue')
     await led2.set_color_bar('blue')
     b = 0.5
-
+    
+    # Go Down
     while b > 0.01:
         await led.set_brightness(b)
         await led2.set_brightness(b)
-        time.sleep(0.1)
+        time.sleep(0.63)
         b -= 0.01
 
+    # Go Black
     await led.set_brightness(0)
     await led2.set_brightness(0)
     await led.set_color_bar('black')
     await led2.set_color_bar('black')
 
-    time.sleep(5)
+    # Wait on Black
+    time.sleep(darkTime)
+
+    if await led.init_and_connect():
+        print("connected {thismac}")
+
+    if await led2.init_and_connect():
+        print("connected {lightbar2}")
     
+    # Go Blue Again
     await led.set_brightness(0)
     await led2.set_brightness(0)
     await led.set_color_bar('blue')
     await led2.set_color_bar('blue')
 
+    # Go back Up
     while b < 0.49:
         await led.set_brightness(b)
         await led2.set_brightness(b)
-        time.sleep(0.1)
+        time.sleep(0.5)
         b += 0.01
 
 

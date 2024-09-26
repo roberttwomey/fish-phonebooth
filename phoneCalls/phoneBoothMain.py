@@ -1,6 +1,7 @@
 import json
 import datetime
 import subprocess
+import os
 from os import path
 from time import sleep
 
@@ -13,6 +14,8 @@ import time
 # importing sys module
 import sys
 # import serial
+from os import path
+from dotenv import load_dotenv
 
 from makeCalls import fishPhoneCall
 
@@ -20,9 +23,14 @@ inNum = '0'
 firstCallDelay = 191#181 # call delay in seconds
 endCallDelay =  650#401 # call delay in seconds
 
+# load variables from .env file: 
+load_dotenv()
 
-arduino = serial.Serial(port='/dev/cu.usbmodem143401', baudrate=9600, timeout=.1) 
-airduino = serial.Serial(port='/dev/cu.usbmodem143301', baudrate=115200, timeout=.1) 
+USB_ONAIR = os.getenv('USB_ONAIR')
+USB_KEYPAD = os.getenv('USB_KEYPAD')
+
+arduino = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
+airduino = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
 
 pygame.init()
 
@@ -39,7 +47,8 @@ def write_read(x):
     print(data)
     return data
 	
-subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+# subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+subprocess.Popen(['python', '../bulb/blue.py'])
 #write_read('w')
 
 def takeNum():
@@ -154,14 +163,16 @@ def addNum(inNum):
         print("added ", listObj[uid])
         audioProcess = subprocess.Popen(['python', 'play-audio.py'])
         
-        lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
+        # lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
+        lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
         handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
         
         if handle == 'END':
             audioProcess.terminate()
             lightProcess.terminate()
             write_read('n')
-            subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+            # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+            subprocess.Popen(['python', '../bulb/blue.py'])
             time.sleep(5)
             #sys.exit()
 
@@ -174,7 +185,8 @@ def addNum(inNum):
                 audioProcess.terminate()
                 lightProcess.terminate()
                 write_read('n')
-                subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+                # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+                subprocess.Popen(['python', '../bulb/blue.py'])
                 time.sleep(5)
                 return
                 #sys.exit()
@@ -184,14 +196,15 @@ def addNum(inNum):
     elif add == 1: 
         print("Number already stored at uid: ", uid)
         audioProcess = subprocess.Popen(['python', 'play-audio.py'])
-        lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
+        # lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
         handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
         
         if handle == 'END':
             audioProcess.terminate()
             lightProcess.terminate()
             write_read('n')
-            subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+            # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+            subprocess.Popen(['python', '../bulb/blue.py'])
         elif handle == 'CALLED':
             handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
             # subprocess.Popen(['python', 'afterCalls.py'])
@@ -199,8 +212,9 @@ def addNum(inNum):
                 audioProcess.terminate()
                 lightProcess.terminate()
                 write_read('n')
-                subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-        # lightProcess.terminate()ß
+                # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
+                subprocess.Popen(['python', '../bulb/blue.py'])
+        # lightProcess.terminate()
         return
     
     elif add == 2: 
