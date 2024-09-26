@@ -84,8 +84,8 @@ if __name__ == '__main__':
 	# kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
 
 	showMask = False
-	# fullResolution = True
-	fullResolution = False
+	fullResolution = True
+	# fullResolution = False
 
 	# video file
 	# cap = cv2.VideoCapture(infile)
@@ -100,6 +100,8 @@ if __name__ == '__main__':
 	# outputsize = 2160
 	# outputsize = 1440
 	outputsize = 800
+
+	cap2 = cv2.VideoCapture(0) # camera zero
 
 	# usb cam
 	# cap = cv2.VideoCapture(0)
@@ -132,6 +134,7 @@ if __name__ == '__main__':
 	scalef = float(outputsize)/float(height)
 	outwidth = int(scalef*width)
 	
+	screen_frame = np.zeros((800, 1280, 3))
 
 	# else:
 	# 	outwidth = width
@@ -200,6 +203,10 @@ if __name__ == '__main__':
 
 	if not doHeadless:
 		cv2.namedWindow('tracking', cv2.WINDOW_NORMAL)
+
+		# cv2.namedWindow('tracking', cv2.WND_PROP_FULLSCREEN)
+		# cv2.setWindowProperty("window",cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+		
 		# cv2.namedWindow('fgmask', cv2.WINDOW_NORMAL)
 		# cv2.namedWindow('fgbg', cv2.WINDOW_NORMAL)
 
@@ -383,9 +390,33 @@ if __name__ == '__main__':
 			frame = cv2.resize(frame, (outwidth,outheight))
 			# Define the translation matrix
 
-		M = np.float32([[1, 0, -240], [0, 1, 0]])
+		M = np.float32([[1, 0, -280], [0, 1, 0]])
 		# Perform the translation
 		frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+
+		# 1440x1080 * 800 = 1067
+		frame2 = cv2.copyMakeBorder(
+			frame, 
+			0, 
+			0, 
+			0, 
+			580, 
+			cv2.BORDER_CONSTANT, 
+			value=(0, 0, 0)
+			)
+
+		ret, irframe = cap2.read()
+
+		if irframe is not None:
+			irframe = cv2.rotate(irframe, cv2.ROTATE_90_CLOCKWISE)
+			# print(irframe.shape[0], irframe.shape[1], frame2.shape[0], frame2.shape[1])
+			irwidth = int(float(2160.0/irframe.shape[0])*irframe.shape[1])
+			# print(irwidth)
+			irframe = cv2.resize(irframe, (irwidth, 2160))
+			# cv2.imshow('ir cam', irframe)
+			frame2[0:2160, 2405:]=irframe[:,80:-80]
+			# frame2[]
+			# back_img[y_start:y_end,x_start:x_end] = front_img[y_start:y_end,x_start:x_end]
 
 		if not doHeadless:
 			# big_image = np.zeros((outwidth, outheight, 3), np.uint8)
@@ -394,7 +425,7 @@ if __name__ == '__main__':
 			# big_image[y_offset:y_offset+frame.shape[0], x_offset:x_offset+frame.shape[1]] = frame
 			# cv2.imshow('tracking', big_image)
 			
-			cv2.imshow('tracking',frame)
+			cv2.imshow('tracking',frame2)
 			# cv2.imshow('fgbg',fgmask)
 			# cv2.imshow('mask',thresh)
 
