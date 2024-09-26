@@ -19,10 +19,11 @@ fs = 48000  # Record at 44100 samples per second
 seconds = 3
 # filename = "output.wav"
 
-microphone_device = 1
-headphone_device = 2
-motu_device = 0
-screen_device = 3
+
+microphone_device = 2#1
+headphone_device = 3#2
+motu_device = 1
+screen_device = 0#3
 
 def stop():
     return
