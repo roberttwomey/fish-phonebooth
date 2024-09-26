@@ -42,6 +42,8 @@ def write_read():
             return oc
 	
 
+camera = subprocess.Popen([THIS_PYTHON, 'camera-views.py'])
+                     
 
 while True:
 
