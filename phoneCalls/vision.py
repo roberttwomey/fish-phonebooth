@@ -198,6 +198,11 @@ class VisionSystem:
 	def update(self):
 		ret, frame = self.cap1.read()
 
+		if not ret:
+			print('looping at end of video')
+			self.cap1.set(cv2.CAP_PROP_POS_FRAMES, 0)
+			ret, frame = self.cap1.read()
+
 		if frame is None:
 			return
 
@@ -373,7 +378,7 @@ if __name__ == '__main__':
 
 		k = cv2.waitKey(1)
 		if k == 27:
-		   break
+			break
 		elif k == ord('r'):
 			vision.reset()
 			# fgbg.clear()

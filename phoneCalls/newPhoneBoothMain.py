@@ -22,7 +22,7 @@ endCallDelay =  650#401 # call delay in seconds
 
 DEBUG_ARDUINO = True
 DEBUG_PHONECALL = True
-DEBUG_AUDIO = True
+DEBUG_AUDIO = False
 DEBUG_LIGHTS = True
 DEBUG_STORAGE = True
 
@@ -44,7 +44,8 @@ if not DEBUG_LIGHTS:
 
 #write_read('w')
 
-
+CLOSED = 0
+OPEN = 1
 
 class PhoneBooth(): 
 
@@ -54,6 +55,7 @@ class PhoneBooth():
 		self.listObj = []
 		self.number = ''
 		self.value = ''
+		self.doorState = OPEN
 
 		self.setup()
 
@@ -86,6 +88,16 @@ class PhoneBooth():
 		print(data+" --> screen arduino")
 
 		return data
+	
+	def update_doorstate(self):
+		if not DEBUG_ARDUINO:
+			data = arduinoDoor.readline().decode('ascii').strip()
+			if data == "open":
+				self.doorState = OPEN
+				print("open")
+			elif data == "closed":
+				self.doorState = CLOSED
+				print("closed")
 
 	def storeNum(self):
 
@@ -125,6 +137,7 @@ class PhoneBooth():
 			print("added ", listObj[uid])
 			if not DEBUG_AUDIO:
 				self.audioProcess = subprocess.Popen(['python', 'play-audio.py'])
+				
 			if not DEBUG_LIGHTS:
 				self.lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
 			
@@ -290,6 +303,7 @@ class PhoneBooth():
 			return False
 
 
+
 if __name__ == '__main__':
 
 	booth = PhoneBooth()
@@ -301,17 +315,27 @@ if __name__ == '__main__':
 	new_key = None
 	timeLastKey = 0
 
-	print("Enter Phone # \n")
-	booth.write_read('w')
+	isRunning = False
+	lastDoorState = OPEN
+	timeLastChanged = 0
 
 	while(1):
 		vision.update()
+		booth.update_doorstate()
 
 		k = cv2.pollKey()
 		if k == 27:
 		   break
 		elif k == ord('r'):
 			vision.reset()
+		elif k == ord('o'):
+			if DEBUG_ARDUINO:
+				booth.doorState = OPEN
+				print("open")
+		elif k == ord('c'):
+			if DEBUG_ARDUINO:
+				booth.doorState = CLOSED
+				print("closed")
 		else:
 			if k != -1:  
 				# If a key is pressed
@@ -326,7 +350,31 @@ if __name__ == '__main__':
 				lastKey = None	
 				new_key = None
 
-		if new_key:
+		if not isRunning:
+			if booth.doorState == CLOSED:
+				if lastDoorState == OPEN: 
+					timeLastChanged = time.time()
+					lastDoorState = CLOSED
+				else:
+					if time.time() - timeLastChanged > 3:
+						# it's been closed for more than three seconds
+						print("has been closed for more than three seconds")
+						isRunning = True
+						print("Enter Phone # \n")
+						booth.write_read('w')
+		else:
+			if booth.doorState == OPEN:
+				if lastDoorState == CLOSED:
+					timeLastChanged = time.time()
+					lastDoorState == OPEN
+				else:
+					if time.time() - timeLastChanged > 5:
+						# it was running but door has been open for more than five seconds
+						isRunning = False
+						print("... resetting ...")
+						booth.reset()
+
+		if isRunning and new_key:
 			if booth.takeNum(new_key):
 				booth.storeNum()
 				
