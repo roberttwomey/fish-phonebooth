@@ -70,6 +70,8 @@ class PhoneBooth():
 		if self.lightProcess:
 			self.lightProcess.terminate()
 		self.write_read('n') # turn off "On Air" light
+		self.number = ''
+		self.value = ''
 
 	def write_read(self, x):
 		data = x
@@ -295,35 +297,37 @@ if __name__ == '__main__':
 	vision = VisionSystem()
 	vision.start()
 
-	key_char = None
-	newKey = False
+	last_key = None
+	new_key = None
 	timeLastKey = 0
+
+	print("Enter Phone # \n")
+	booth.write_read('w')
 
 	while(1):
 		vision.update()
 
-		k = cv2.waitKey(30)
+		k = cv2.pollKey()
 		if k == 27:
 		   break
 		elif k == ord('r'):
 			vision.reset()
 		else:
-			if k != -1:  # If a key is pressed
+			if k != -1:  
+				# If a key is pressed
 				# Convert the ASCII value to a character
-				new_key = chr(k)
-				print(f'Pressed key: {new_key}')
-				if key_char != new_key:
-					key_char = new_key
-					newKey = True
-					timeLastKey = time.time()
-				else:
-					newKey = False
-					
-					if time.time()-timeLastKey > 0.02:
-						newKey = True
+				if k != lastKey:
+					lastKey = k
+					print(f"Key pressed: {k}")
+					lastKeyTime = time.time()
+					new_key = chr(k)
+			else:
+				# print(".")
+				lastKey = None	
+				new_key = None
 
-		if newKey:
-			if booth.takeNum(key_char):
+		if new_key:
+			if booth.takeNum(new_key):
 				booth.storeNum()
 				
 				booth.write_read('n')
@@ -335,7 +339,7 @@ if __name__ == '__main__':
 				print("Enter Phone # \n")
 				booth.write_read('w')
 
-			newKey = False
+			keyIsNew = False
 
 	print("vision is done. ")
 	# print "freeing resources"
