@@ -19,11 +19,11 @@ void loop() {
   
   receivedChar = Serial.read();
   
-  if (receivedChar == '~'){
+  if (receivedChar == 'n'){
     // turn light off
     digitalWrite(air, LOW);
   }
-  if (receivedChar == 'n'){
+  if (receivedChar == '~'){
     // turn light on
     digitalWrite(air, HIGH);
   }

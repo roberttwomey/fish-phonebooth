@@ -92,13 +92,12 @@ class PhoneBooth():
 		if not DEBUG_ARDUINO:
 			arduinoDoor.write(bytes('?', 'utf-8'))
 			data = arduinoDoor.readline().decode('ascii').strip()
-			print(data)
 			if data == "o":
 				self.doorState = OPEN
-				print("open")
+				# print("open")
 			elif data == "c":
 				self.doorState = CLOSED
-				print("closed")
+				# print("closed")
 
 	def storeNum(self):
 
