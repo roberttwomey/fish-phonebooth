@@ -28,3 +28,20 @@ cd ~/Desktop/fish-phonebooth/phoneCalls
 conda activate fishphone
 /opt/homebrew/anaconda3/envs/fishphone/bin/python runFishPhoneBooth.py
 ```
+
+## Env file info
+
+add twilio
+
+also...
+
+```bash
+CAM1 = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
+VIDEO_FILE = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
+NETWORK_CAMERA = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
+DEBUG_ARDUINO = False
+DEBUG_PHONECALL = False
+DEBUG_AUDIO = False
+DEBUG_LIGHTS = False
+DEBUG_STORAGE = False
+```
