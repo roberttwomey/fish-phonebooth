@@ -107,22 +107,22 @@ if __name__ == '__main__':
 	VIDEO_FILE = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
 	NETWORK_CAMERA = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
 
-	parser = argparse.ArgumentParser(description='run background forground segmentation on input video',
-		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	# parser = argparse.ArgumentParser(description='run background forground segmentation on input video',
+	# 	formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-	parser.add_argument('--write', default=False, dest='dowrite', action='store_true', help='save tracked image as new video')
-	parser.add_argument('--headless', default=False, dest='doheadless', action='store_true', help='do not display video on screen')
-	parser.add_argument('--undistort', default=False, dest='doundistort', action='store_true', help='undistort circular fisheye')
-	parser.add_argument('--minblob', default=600.0, type=float, help='minimum blob size to track')
-	parser.add_argument('--maxblob', default=12000.0, type=float, help='maximum blob size to track')
-	parser.add_argument('--radius', default=30.0, type=float, help='maximum radius from frame to frame blob track')
+	# parser.add_argument('--write', default=False, dest='dowrite', action='store_true', help='save tracked image as new video')
+	# parser.add_argument('--headless', default=False, dest='doheadless', action='store_true', help='do not display video on screen')
+	# parser.add_argument('--undistort', default=False, dest='doundistort', action='store_true', help='undistort circular fisheye')
+	# parser.add_argument('--minblob', default=600.0, type=float, help='minimum blob size to track')
+	# parser.add_argument('--maxblob', default=12000.0, type=float, help='maximum blob size to track')
+	# parser.add_argument('--radius', default=30.0, type=float, help='maximum radius from frame to frame blob track')
 	
-	args = parser.parse_args()
+	# args = parser.parse_args()
 
 	# runtime options
-	doWrite = args.dowrite
-	doHeadless = args.doheadless
-	doUndistort = args.doundistort
+	doWrite = False #args.dowrite
+	doHeadless = False #args.doheadless
+	doUndistort = False #args.doundistort
 	# minBlobSize = args.minblob
 	# maxBlobSize = args.maxblob
 	# searchRadius = args.radius
