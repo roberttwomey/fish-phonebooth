@@ -40,10 +40,8 @@ def write_read():
         elif data == "closed":
             oc = "closed"
             return oc
-	
 
 camera = subprocess.Popen([THIS_PYTHON, 'camera-views.py'])
-                     
 
 while True:
 
@@ -73,7 +71,10 @@ while True:
             
 		door = write_read()
 		if door == "open":
-			pyautogui.press('`')
+			print("second "+door+"received")
+			pyautogui.press('`') # should signal END to phoneBoothMain, 
+			# might not work on M2
+
 			ran = False
 
 	#if k == "l":

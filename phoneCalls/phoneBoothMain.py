@@ -52,6 +52,7 @@ def write_read(x):
 	
 # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
 subprocess.Popen(['python', '../bulb/blue.py'])
+
 #write_read('w')
 
 def takeNum():
