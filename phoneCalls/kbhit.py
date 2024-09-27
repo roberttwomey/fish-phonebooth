@@ -1,4 +1,10 @@
 import os
+'''
+non blocking kbhit and getch()
+from https://gist.github.com/michelbl/efda48b19d3e587685e3441a74457024?permalink_comment_id=4648633#gistcomment-4648633
+
+works on macos 14.6, Sep 2024
+'''
 
 if os.name == 'nt':
     import msvcrt
@@ -79,7 +85,6 @@ class KBHit:
 
 # Test
 if __name__ == "__main__":
-    kb = KBHit()
     print('Hit any key, or ESC to exit')
 
     with KBHit() as kb:

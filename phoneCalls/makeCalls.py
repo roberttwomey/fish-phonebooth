@@ -7,7 +7,7 @@ import datetime
 import time
 from os import path
 # from phoneBoothMain import write_read
-import pygame
+# import pygame
 
 # Download the helper library from https://www.twilio.com/docs/python/install
 from dotenv import load_dotenv
@@ -30,30 +30,28 @@ with open(filename) as fp:
     users = json.load(fp)
 
 def fishPhoneCall(thisUser, hour, minute, second):
-    pygame.init()
+    # pygame.init()
 
     # creating display
-    display = pygame.display.set_mode((300, 300))
+    # display = pygame.display.set_mode((300, 300))
 
     print("waiting until", hour, ":", minute, ":", second, "to call\n")
     
     while True:
-
-        
 
         currTime = datetime.datetime.now()
 
         with open(filename) as fp:
             users = json.load(fp)
 
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_NUMLOCK:    
-                        number = 'END'
-                        return number
-                elif event.key == pygame.K_BACKQUOTE:    
-                        number = 'END'
-                        return number
+        # for event in pygame.event.get():
+        #     if event.type == pygame.KEYDOWN:
+        #         if event.key == pygame.K_NUMLOCK:    
+        #                 number = 'END'
+        #                 return number
+        #         elif event.key == pygame.K_BACKQUOTE:    
+        #                 number = 'END'
+        #                 return number
 
         # Waits until the designated time to make the call
         if currTime.hour == hour and currTime.minute == minute and currTime.second == second:
@@ -113,8 +111,6 @@ def fishPhoneCall(thisUser, hour, minute, second):
             return 'CALLED'  
         
 def randomFishCall():
-
-    
 
     #print("waiting until", hour, ":", minute, "to call\n")
     

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
-### !/usr/local/bin/python
-
 '''
-bg subtraction example
+opencv code to:
+1) calculate and track movement in foreground
+2) display fisheye network cam with tracking
+3) display booth view
 
-rtwomey@ysu.edu 2017
 '''
 import numpy as np
 import cv2

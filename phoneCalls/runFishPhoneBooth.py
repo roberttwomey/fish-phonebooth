@@ -4,6 +4,7 @@ import os
 from subprocess import check_call
 import serial
 import pyautogui
+# maybe this doesn't work
 import time
 import os
 from os import path
@@ -19,7 +20,7 @@ USB_ONAIR = os.getenv('USB_ONAIR')
 USB_KEYPAD = os.getenv('USB_KEYPAD')
 
 arduinoDoor = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
-arduino = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
+# arduinoKeypad = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
 
 THIS_PYTHON = '/opt/homebrew/anaconda3/envs/fishphone/bin/python'
 

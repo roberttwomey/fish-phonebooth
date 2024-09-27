@@ -3,133 +3,130 @@ import json
 import datetime
 import subprocess
 import os
-from os import path
 from time import sleep
-
-# from numInput import takeNum
-
-import pygame
-# import keyboard  # using module keyboard
+# import pygame
 import serial
 import time
-# importing sys module
 import sys
-# import serial
-from os import path
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 from makeCalls import fishPhoneCall
+from kbhit import KBHit
 
 inNum = '0'
 firstCallDelay = 191#181 # call delay in seconds
 endCallDelay =  650#401 # call delay in seconds
 
+DEBUG_ARDUINO = True
+DEBUG_PHONECALL = True
+DEBUG_AUDIO = True
+DEBUG_LIGHTS = True
+DEBUG_STORAGE = True
+
 # load variables from .env file: 
 load_dotenv()
 
-USB_ONAIR = os.getenv('USB_ONAIR')
-USB_KEYPAD = os.getenv('USB_KEYPAD')
-
-arduino = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
-airduino = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
-
-pygame.init()
-
 THIS_PYTHON = '/opt/homebrew/anaconda3/envs/fishphone/bin/python'
 
-    # creating display
-display = pygame.display.set_mode((300, 300))
+if not DEBUG_ARDUINO:
+    USB_ONAIR = os.getenv('USB_ONAIR')
+    USB_KEYPAD = os.getenv('USB_KEYPAD')
+    arduinoScreen = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
+    arduinoDoor = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
 
-def write_read(x): 
-    arduino.write(bytes(x, 'utf-8'))
+# pygame.init()
+kb = KBHit()
+
+# creating display
+# display = pygame.display.set_mode((300, 300))
+
+def write_read(x):
     data = x
-    if data == 'n':
-        airduino.write(bytes(x, 'utf-8'))
-    elif data == '~':
-        airduino.write(bytes(x, 'utf-8'))
-    print(data)
+    if not DEBUG_ARDUINO: 
+        arduinoScreen.write(bytes(x, 'utf-8'))
+        if data == 'n':
+            arduinoDoor.write(bytes(x, 'utf-8'))
+        elif data == '~':
+            arduinoDoor.write(bytes(x, 'utf-8'))
+    print(data+" --> arduino")
     return data
 	
-# subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-subprocess.Popen(['python', '../bulb/blue.py'])
+if not DEBUG_LIGHTS:
+    # reset_blue
+    subprocess.Popen(['python', '../bulb/blue.py']) # run once
 
 #write_read('w')
 
 def takeNum():
-    
     number = ''
     value = ''
+    try:
+        while True:
+            if kb.kbhit():                            
+                # checking if key was pressed
+                c = kb.getch()
+                c_ord = ord(c)
 
-    while True:
-        
-        # creating a loop to check events that 
-        # are occurring
-        for event in pygame.event.get():
-            
-                # checking if keydown event happened or not
-            if event.type == pygame.KEYDOWN:
                 if len(number) < 10:    
-                    # checking if key was pressed
-                    if event.key == pygame.K_KP0:
+                    if c == '0':
                         value = write_read('0') 
                         number = number + value
-                    if event.key == pygame.K_KP1:
+                    if c == '1':
                         value = write_read('1') 
                         number = number + value
-                    if event.key == pygame.K_KP2:
+                    if c == '2':
                         value = write_read('2') 
                         number = number + value
-                    if event.key == pygame.K_KP3:
+                    if c == '3':
                         value = write_read('3') 
                         number = number + value
-                    if event.key == pygame.K_KP4:
+                    if c == '4':
                         value = write_read('4') 
                         number = number + value
-                    if event.key == pygame.K_KP5:
+                    if c == '5':
                         value = write_read('5') 
                         number = number + value
-                    if event.key == pygame.K_KP6:
+                    if c == '6':
                         value = write_read('6') 
                         number = number + value
-                    if event.key == pygame.K_KP7:
+                    if c == '7':
                         value = write_read('7') 
                         number = number + value
-                    if event.key == pygame.K_KP8:
+                    if c == '8':
                         value = write_read('8') 
                         number = number + value
-                    if event.key == pygame.K_KP9:
+                    if c == '9':
                         value = write_read('9') 
                         number = number + value
-                    if event.key == pygame.K_BACKSPACE:
+                    if c_ord == 127:
+                        # BACKSPACE
                         value = write_read('*') 
                         number = number[:-1]
-                    if event.key == pygame.K_NUMLOCK:
+                    if c_ord == 144:
+                        # num lock keycode https://www.foreui.com/articles/Key_Code_Table.htm
                         value = write_read('n') 
                         number = 'END'
                         return number
-                    if event.key == pygame.K_BACKQUOTE:
+                    if c == '`':
                         value = write_read('n') 
                         number = 'END'
                         return number
+                    print(number, c_ord)
                 if len(number) == 10:
-                    if event.key == pygame.K_KP_ENTER:
+                    print("reached 10")
+                    if c_ord == 10:
+                        # ENTER / CR
                         write_read('~')
+                        print("...completed number entry")
+                        sys.stdout.flush()
                         return number
-                    if event.key == pygame.K_BACKSPACE:
+                    if c_ord == 127:
                         value = write_read('*') 
                         number = number[:-1]
-# def readserial(comport, baudrate):
+                    print(number, c_ord)
 
-#     ser = serial.Serial(comport, baudrate, timeout=0.1)         # 1/timeout is the frequency at which the port is read
-
-#     while True:
-#         data = ser.readline().decode().strip()
-#         if data:
-#             inNum = data
-#             print(inNum)
-#             # time.sleep(500)
-#             return inNum--
-
+    except KeyboardInterrupt:
+        pass
 
 def addNum(inNum):
     # Stores the current time
@@ -165,66 +162,104 @@ def addNum(inNum):
                                 separators=(',',': '))
         
         print("added ", listObj[uid])
-        audioProcess = subprocess.Popen(['python', 'play-audio.py'])
+        if not DEBUG_AUDIO:
+            audioProcess = subprocess.Popen(['python', 'play-audio.py'])
+        if not DEBUG_LIGHTS:
+            lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
         
-        # lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
-        lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
-        handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
+        if not DEBUG_PHONECALL:
+            handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
         
         if handle == 'END':
-            audioProcess.terminate()
-            lightProcess.terminate()
+                
+            # this cycle of phone call is done
+            
+            if not DEBUG_AUDIO:
+                audioProcess.terminate()
+            if not DEBUG_LIGHTS:
+                lightProcess.terminate()
+            
             write_read('n')
-            # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-            subprocess.Popen(['python', '../bulb/blue.py'])
+            
+            if not DEBUG_LIGHTS:
+                # reset_blue
+                subprocess.Popen(['python', '../bulb/blue.py']) # run once
+            
             time.sleep(5)
-            #sys.exit()
-
             return
 
         elif handle == 'CALLED':
-            handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
+            if not DEBUG_PHONECALL:
+                handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
+            
             # subprocess.Popen(['python', 'afterCalls.py'])
+            
             if handle == 'END':
-                audioProcess.terminate()
-                lightProcess.terminate()
+                if not DEBUG_AUDIO:
+                    audioProcess.terminate()
+                if not DEBUG_LIGHTS:
+                    lightProcess.terminate()
+                
                 write_read('n')
-                # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-                subprocess.Popen(['python', '../bulb/blue.py'])
+
+                if not DEBUG_LIGHTS:
+                    # reset_blue
+                    subprocess.Popen(['python', '../bulb/blue.py']) # run once
+                
                 time.sleep(5)
                 return
-                #sys.exit()
+                            
         # lightProcess.terminate()
         return
     
     elif add == 1: 
         print("Number already stored at uid: ", uid)
-        audioProcess = subprocess.Popen(['python', 'play-audio.py'])
+        if not DEBUG_AUDIO:
+            audioProcess = subprocess.Popen(['python', 'play-audio.py'])
+        
         # lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
-        handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
+        
+        if not DEBUG_PHONECALL:
+            handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
         
         if handle == 'END':
-            audioProcess.terminate()
-            lightProcess.terminate()
-            write_read('n')
-            # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-            subprocess.Popen(['python', '../bulb/blue.py'])
-        elif handle == 'CALLED':
-            handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
-            # subprocess.Popen(['python', 'afterCalls.py'])
-            if handle == 'END':
+            if not DEBUG_AUDIO:
                 audioProcess.terminate()
+
+            if not DEBUG_LIGHTS:
                 lightProcess.terminate()
+
+            write_read('n') # signal arduino
+
+            if not DEBUG_LIGHTS:
+                # reset_blue
+                subprocess.Popen(['python', '../bulb/blue.py']) # run once
+
+        elif handle == 'CALLED':
+            if not DEBUG_PHONECALL:
+                handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
+            
+            # subprocess.Popen(['python', 'afterCalls.py'])
+            
+            if handle == 'END':
+                if not DEBUG_AUDIO:
+                    audioProcess.terminate()
+
+                if not DEBUG_LIGHT:
+                    lightProcess.terminate()
+
                 write_read('n')
-                # subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-                subprocess.Popen(['python', '../bulb/blue.py'])
+
+                if not DEBUG_LIGHTS:
+                    # reset_blue
+                    subprocess.Popen(['python', '../bulb/blue.py']) # run once
+
         # lightProcess.terminate()
         return
     
     elif add == 2: 
         print("Invalid Phone Number")
         return
-
 
 
 filename = 'numbers.json'
@@ -236,33 +271,10 @@ with open(filename) as fp:
 
 print("Enter Phone # \n")
 write_read('w')
-# inNum = readserial('/dev/cu.usbmodem142301', 9600)
 inNum = takeNum()
-addNum(inNum)
+
+if not DEBUG_STORAGE:
+    addNum(inNum)
+    
 write_read('n')
 print("Fish Phone Booth Completed")
-# write_read('n')
-
-# print(listObj)
-# print(type(listObj))
-#numbers = ["phoneNum" for each in ]
-    
-
-
-#print("phone number of user 0 is ", listObj[0]['phoneNum'])
-# inNum = input("Enter Phone Number: \n+1")
-
-# if __name__ == '__main__':
-
-#     while True:
-        
-#         subprocess.Popen(['python', '../../govee-btled-controller/blue.py'])
-#         print("Enter Phone # \n")
-#         # inNum = readserial('/dev/cu.usbmodem142301', 9600)
-#         inNum = takeNum()
-#         addNum(inNum)
-#         #write_read('n')
-        
- 
-
- 
