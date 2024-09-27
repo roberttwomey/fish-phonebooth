@@ -20,23 +20,22 @@ from vision import VisionSystem
 firstCallDelay = 191#181 # call delay in seconds
 endCallDelay =  650#401 # call delay in seconds
 
-DEBUG_ARDUINO = True
-DEBUG_PHONECALL = True
-DEBUG_AUDIO = False
-DEBUG_LIGHTS = True
-DEBUG_STORAGE = True
-
 # load variables from .env file: 
 load_dotenv()
 
 THIS_PYTHON = '/opt/homebrew/anaconda3/envs/fishphone/bin/python'
+
+DEBUG_ARDUINO = os.getenv('DEBUG_ARDUINO') == 'True'
+DEBUG_PHONECALL = os.getenv('DEBUG_PHONECALL') == 'True'
+DEBUG_AUDIO = os.getenv('DEBUG_AUDIO') == 'True'
+DEBUG_LIGHTS = os.getenv('DEBUG_LIGHTS') == 'True'
+DEBUG_STORAGE = os.getenv('DEBUG_STORAGE') == 'True'
 
 if not DEBUG_ARDUINO:
 	USB_ONAIR = os.getenv('USB_ONAIR')
 	USB_KEYPAD = os.getenv('USB_KEYPAD')
 	arduinoScreen = serial.Serial(port=USB_KEYPAD, baudrate=9600, timeout=.1) 
 	arduinoDoor = serial.Serial(port=USB_ONAIR, baudrate=115200, timeout=.1) 
-
 
 if not DEBUG_LIGHTS:
 	# reset_blue
@@ -91,11 +90,13 @@ class PhoneBooth():
 	
 	def update_doorstate(self):
 		if not DEBUG_ARDUINO:
+			arduinoDoor.write(bytes('?', 'utf-8'))
 			data = arduinoDoor.readline().decode('ascii').strip()
-			if data == "open":
+			print(data)
+			if data == "o":
 				self.doorState = OPEN
 				print("open")
-			elif data == "closed":
+			elif data == "c":
 				self.doorState = CLOSED
 				print("closed")
 
@@ -288,7 +289,7 @@ class PhoneBooth():
 			
 			if len(self.number) == 10:
 				print("reached 10")
-				if c_ord == 13:
+				if c_ord == 13 or c_ord == 3:
 					# ENTER key in OpenCV is 13
 					self.write_read('~')
 					print("...completed number entry")
@@ -318,6 +319,7 @@ if __name__ == '__main__':
 	isRunning = False
 	lastDoorState = OPEN
 	timeLastChanged = 0
+	booth.reset()
 
 	while(1):
 		vision.update()

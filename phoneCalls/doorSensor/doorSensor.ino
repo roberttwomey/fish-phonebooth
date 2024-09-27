@@ -1,5 +1,5 @@
-const int sensor = 6;
-const int air = 10;
+const int sensor = 10;
+const int air = 7;
 int state;
 char receivedChar;
 
@@ -11,24 +11,14 @@ void setup() {
   pinMode(sensor, INPUT_PULLUP);
   pinMode(air, OUTPUT);
   
-  digitalWrite(air, HIGH); // turn off light
+  digitalWrite(air, LOW); // turn off light
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  state = digitalRead(sensor);
   
   receivedChar = Serial.read();
   
-  if (state == LOW){
-    Serial.print("closed");
-    
-    //digitalWrite(air, LOW);
-  }
-  else{
-    Serial.print("open");
-    //digitalWrite(air, HIGH);
-  }
   if (receivedChar == '~'){
     // turn light off
     digitalWrite(air, LOW);
@@ -37,5 +27,15 @@ void loop() {
     // turn light on
     digitalWrite(air, HIGH);
   }
-  delay(1000);
+  if (receivedChar == '?'){
+    state = digitalRead(sensor);
+    if (state == LOW){
+      Serial.print("c");
+      //digitalWrite(air, LOW);
+    } else {
+      Serial.print("o");
+      //digitalWrite(air, HIGH);
+    }
+  }
+  delay(10);
 }

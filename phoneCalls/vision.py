@@ -7,6 +7,7 @@ opencv code to:
 import numpy as np
 import cv2
 import os
+from dotenv import load_dotenv
 import argparse
 import sys
 from collections import deque
@@ -15,8 +16,6 @@ import json
 # https://github.com/ContinuumIO/anaconda-issues/issues/223
 # a better video write (alternative to opencv videowriter)
 # https://github.com/scikit-video/scikit-video
-
-
 
 def sort_by_area(cnts):
 	# adapted from  https://github.com/kraib/open_cv_tuts/blob/master/sorting_contours.py
@@ -127,7 +126,10 @@ class VisionSystem:
 		self.outputsize = 800
 
 		self.targetWidth = 1280
-		self.targetHeight = 960
+		self.targetHeight = 800
+
+		load_dotenv()
+		self.CAM1 = os.getenv('CAM1')
 
 	def start(self):
 		# set up the various parts of the background and video
@@ -137,7 +139,8 @@ class VisionSystem:
 
 	def setup_video(self):
 		# set up overhead capture
-		self.cap1 = cv2.VideoCapture(VIDEO_FILE)
+		# self.cap1 = cv2.VideoCapture(VIDEO_FILE)
+		self.cap1 = cv2.VideoCapture(self.CAM1)
 		self.cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
 		self.cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 		self.cap1.set(cv2.CAP_PROP_FPS, 15)
