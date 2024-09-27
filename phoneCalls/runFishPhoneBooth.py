@@ -6,12 +6,11 @@ import serial
 import pyautogui
 # maybe this doesn't work
 import time
-import os
 from os import path
 from dotenv import load_dotenv
 
-ran= False
-oc = ""
+alreadyRan = False
+doorState = ""
 
 # load variables from .env file: 
 load_dotenv()
@@ -28,7 +27,7 @@ THIS_PYTHON = '/opt/homebrew/anaconda3/envs/fishphone/bin/python'
 def write_read():
     #arduinoDoor.write(bytes(x,   'utf-8'))
     #time.sleep(0.05)
-    global oc
+    global doorState
 	
     while True:
 
@@ -36,11 +35,11 @@ def write_read():
 		#print(data)
 
         if data == "open":
-            oc = "open"
-            return oc
+            doorState = "open"
+            return doorState
         elif data == "closed":
-            oc = "closed"
-            return oc
+            doorState = "closed"
+            return doorState
 
 camera = subprocess.Popen([THIS_PYTHON, 'camera-views.py'])
 
@@ -48,7 +47,7 @@ while True:
 
 	door = write_read()
 	
-	if ran == False and door == "closed":
+	if alreadyRan == False and door == "closed":
 		print(door)
 		time.sleep(3)
 		print("waited 3 seconds")
@@ -63,9 +62,9 @@ while True:
 			#os.system("python phoneBoothMain.py")
 			#time.sleep(10)
 			# pyautogui.press('`')
-			ran = True
+			alreadyRan = True
 
-	elif ran == True and door == "open":
+	elif alreadyRan == True and door == "open":
             
 		print(door)
 		time.sleep(5)
@@ -76,7 +75,7 @@ while True:
 			pyautogui.press('`') # should signal END to phoneBoothMain, 
 			# might not work on M2
 
-			ran = False
+			alreadyRan = False
 
 	#if k == "l":
 		# check_call(["pkill", "-f", "phoneBoothMain.py"])

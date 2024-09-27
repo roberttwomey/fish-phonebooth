@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 '''
 opencv code to:
-1) calculate and track movement in foreground
-2) display fisheye network cam with tracking
-3) display booth view
-
+- calculate and track movement in foreground
+- display fisheye network cam with tracking + booth view IR cam
 '''
 import numpy as np
 import cv2
@@ -13,8 +11,6 @@ import argparse
 import sys
 from collections import deque
 import json
-
-# import 
 
 # https://github.com/ContinuumIO/anaconda-issues/issues/223
 # a better video write (alternative to opencv videowriter)
@@ -34,12 +30,83 @@ def sort_by_area(cnts):
 	# return the list of sorted contours and areas
 	return (cnts, areas)
 
+
+def resize_to_bounding_box(image, box_width, box_height):
+    # Get the original dimensions of the image
+    original_height, original_width = image.shape[:2]
+
+    # Calculate aspect ratios
+    aspect_ratio_image = original_width / original_height
+    aspect_ratio_box = box_width / box_height
+
+    # Determine new dimensions
+    if aspect_ratio_image > aspect_ratio_box:
+        # Image is wider than the box
+        new_width = box_width
+        new_height = int(box_width / aspect_ratio_image)
+    else:
+        # Image is taller than the box
+        new_height = box_height
+        new_width = int(box_height * aspect_ratio_image)
+
+    # Resize the image
+    resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+    return resized_image
+
+def crop_to_center_square(image):
+    # Get the original dimensions of the image
+    height, width = image.shape[:2]
+
+    # Determine the size of the square (smallest dimension)
+    square_size = min(height, width)
+
+    # Calculate the starting coordinates for the crop
+    start_x = (width - square_size) // 2
+    start_y = (height - square_size) // 2
+
+    # Crop the image to a square
+    cropped_image = image[start_y:start_y + square_size, start_x:start_x + square_size]
+
+    return cropped_image
+
+def center_crop(image, target_height, target_width):
+    # Get the original dimensions of the image
+    height, width = image.shape[:2]
+
+    # Calculate the starting coordinates for the crop
+    start_x = (width - target_width) // 2
+    start_y = (height - target_height) // 2
+
+    # Ensure the crop dimensions fit within the original image
+    start_x = max(0, start_x)
+    start_y = max(0, start_y)
+
+    # Crop the image
+    cropped_image = image[start_y:start_y + target_height, start_x:start_x + target_width]
+
+    return cropped_image
+
+def translate_image(image, xoffset, yoffset):
+		# shift image to the left
+		M = np.float32([[1, 0, xoffset], [0, 1, yoffset]])
+		
+		# Perform the translation
+		translated_image = cv2.warpAffine(
+			image, 
+			M, 
+			(image.shape[1], image.shape[0])
+		)
+
+		return translated_image
+
 if __name__ == '__main__':
 	# global doWrite, infile, outpath
 	# doWrite = False
 
-	
-	# infile = "/Volumes/Work/Projects/housemachine/data/video/livingroom/motion_2017-03-10_22.27.42_4.mp4"
+	VIDEO_FILE = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
+	NETWORK_CAMERA = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
+
 
 	parser = argparse.ArgumentParser(description='run background forground segmentation on input video',
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -77,8 +144,6 @@ if __name__ == '__main__':
 
 	# print("Reading", infile)
 
-	
-
 	# kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10))
 	# kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(15,15))
 
@@ -90,7 +155,9 @@ if __name__ == '__main__':
 	# cap = cv2.VideoCapture(infile)
 	
 	# network fisheye cam
-	cap = cv2.VideoCapture("rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
+	# cap = cv2.VideoCapture("rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
+	cap = cv2.VideoCapture(VIDEO_FILE)
+
 	# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2880)
 	# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
 	cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
@@ -98,9 +165,13 @@ if __name__ == '__main__':
 	cap.set(cv2.CAP_PROP_FPS, 15)
 	# outputsize = 2160
 	# outputsize = 1440
+	
 	outputsize = 800
 
-	cap2 = cv2.VideoCapture(0) # camera zero
+	targetWidth = 1280
+	targetHeight = 960
+
+	cap2 = cv2.VideoCapture(0) # booth cam is device 0
 
 	# usb cam
 	# cap = cv2.VideoCapture(0)
@@ -128,12 +199,12 @@ if __name__ == '__main__':
 	# scalef = float(outputsize) / float(width)
 	# outheight = int(scalef * height)
 
-	# new way
+	# proportianlly scaled to match fit within 
 	outheight = outputsize
 	scalef = float(outputsize)/float(height)
 	outwidth = int(scalef*width)
 	
-	screen_frame = np.zeros((800, 1280, 3))
+	# screen_frame = np.zeros((targetWidth, targetHeight, 3))
 
 	# else:
 	# 	outwidth = width
@@ -385,35 +456,48 @@ if __name__ == '__main__':
 		masked = cv2.resize(masked, (outwidth,outheight))
 		thresh = cv2.resize(thresh, (outwidth,outheight))
 		fgmask = cv2.resize(fgmask, (outwidth,outheight))
+		
 		if not fullResolution:
 			frame = cv2.resize(frame, (outwidth,outheight))
 			# Define the translation matrix
 
-		M = np.float32([[1, 0, -280], [0, 1, 0]])
-		# Perform the translation
-		frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+		frame2 = resize_to_bounding_box(frame, targetWidth, targetHeight)
+		
+		frame2 = crop_to_center_square(frame2)
+		
+		xoffset = targetWidth - frame2.shape[0]
 
-		# 1440x1080 * 800 = 1067
+		# pad the right side of the image to make it the right size
 		frame2 = cv2.copyMakeBorder(
-			frame, 
-			0, 
-			0, 
-			0, 
-			580, 
-			cv2.BORDER_CONSTANT, 
-			value=(0, 0, 0)
-			)
+			frame2,
+			0,
+			0,
+			0,
+			xoffset,
+			cv2.BORDER_CONSTANT,
+			value=[0, 0, 0]  # Black color in BGR
+		)
+		
+		print(frame2.shape)
 
-		ret, irframe = cap2.read()
+		ret, ir_frame = cap2.read()
 
-		if irframe is not None:
-			irframe = cv2.rotate(irframe, cv2.ROTATE_90_CLOCKWISE)
+		if ir_frame is not None:
+			ir_frame = cv2.rotate(ir_frame, cv2.ROTATE_90_CLOCKWISE)
+			ir_frame2 = resize_to_bounding_box(ir_frame, targetWidth, targetHeight)
+			# ir_frame2 = resize_to_bounding_box(ir_frame, xoffset, targetHeight)
+			ir_frame2 = center_crop(ir_frame2, targetHeight, xoffset)
+
+			frame2[:, -1*ir_frame2.shape[1]:] = ir_frame2[:,:]
 			# print(irframe.shape[0], irframe.shape[1], frame2.shape[0], frame2.shape[1])
-			irwidth = int(float(2160.0/irframe.shape[0])*irframe.shape[1])
+			# irwidth = int(float(2160.0/irframe.shape[0])*irframe.shape[1])
 			# print(irwidth)
-			irframe = cv2.resize(irframe, (irwidth, 2160))
+			# irframe = cv2.resize(irframe, (irwidth, 2160))
 			# cv2.imshow('ir cam', irframe)
-			frame2[0:2160, 2405:]=irframe[:,80:-80]
+			
+			# overlay pixels
+			# frame2[0:2160, 2405:]=irframe[:,80:-80]
+
 			# frame2[]
 			# back_img[y_start:y_end,x_start:x_end] = front_img[y_start:y_end,x_start:x_end]
 
