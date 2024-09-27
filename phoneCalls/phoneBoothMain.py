@@ -269,6 +269,8 @@ with open(filename) as fp:
     listObj = json.load(fp)
 
 
+# camera = subprocess.Popen(['python', 'camera-views.py'], start_new_session=True)
+
 print("Enter Phone # \n")
 write_read('w')
 inNum = takeNum()
