@@ -322,7 +322,6 @@ if __name__ == '__main__':
 
 	while(1):
 		vision.update()
-		booth.update_doorstate()
 
 		k = cv2.pollKey()
 		if k == 27:
@@ -351,6 +350,7 @@ if __name__ == '__main__':
 				lastKey = None	
 				new_key = None
 
+		booth.update_doorstate()
 		if not isRunning:
 			if booth.doorState == CLOSED:
 				if lastDoorState == OPEN: 
@@ -359,7 +359,7 @@ if __name__ == '__main__':
 				else:
 					if time.time() - timeLastChanged > 3:
 						# it's been closed for more than three seconds
-						print("has been closed for more than three seconds")
+						print("door has been closed for more than three seconds... starting.")
 						isRunning = True
 						print("Enter Phone # \n")
 						booth.write_read('w')
@@ -372,7 +372,7 @@ if __name__ == '__main__':
 					if time.time() - timeLastChanged > 5:
 						# it was running but door has been open for more than five seconds
 						isRunning = False
-						print("... resetting ...")
+						print("... was running but door has been open... resetting.")
 						booth.reset()
 
 		if isRunning and new_key:
