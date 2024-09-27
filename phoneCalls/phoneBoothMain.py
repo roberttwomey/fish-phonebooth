@@ -263,7 +263,7 @@ def addNum(inNum):
 
 
 filename = 'numbers.json'
-dictObj = []
+listObj = []
 
 with open(filename) as fp:
     listObj = json.load(fp)

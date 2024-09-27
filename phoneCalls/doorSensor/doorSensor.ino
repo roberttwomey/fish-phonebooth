@@ -5,13 +5,13 @@ char receivedChar;
 
 void setup() {
   // put your setup code here, to run once:
-  
   Serial.begin(115200);
   Serial.setTimeout(1);
+
   pinMode(sensor, INPUT_PULLUP);
   pinMode(air, OUTPUT);
-  digitalWrite(air, HIGH);
-
+  
+  digitalWrite(air, HIGH); // turn off light
 }
 
 void loop() {
@@ -30,9 +30,11 @@ void loop() {
     //digitalWrite(air, HIGH);
   }
   if (receivedChar == '~'){
+    // turn light off
     digitalWrite(air, LOW);
   }
   if (receivedChar == 'n'){
+    // turn light on
     digitalWrite(air, HIGH);
   }
   delay(1000);
