@@ -36,12 +36,40 @@ add twilio
 also...
 
 ```bash
-CAM1 = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
+TWILIO_ACCOUNT_SID="put yours here"
+TWILIO_AUTH_TOKEN="put yours here"
+TWILIO_PHONE="put yours here"
+
+USB_ONAIR="usb port for on air and door switch arduino"
+USB_KEYPAD="usb port for screen arduino"
+
+CAM1 = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
 VIDEO_FILE = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
-NETWORK_CAMERA = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
-DEBUG_ARDUINO = False
-DEBUG_PHONECALL = False
+NETWORK_CAMERA = "rtsp://admin:YOUR-PASSWORD@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
+
+DEBUG_ARDUINO = True
+DEBUG_PHONECALL = True
 DEBUG_AUDIO = False
-DEBUG_LIGHTS = False
-DEBUG_STORAGE = False
+DEBUG_LIGHTS = True
+DEBUG_STORAGE = True
+
+MIC_DEVICE = 0
+HEADPHONE_DEVICE = 1
+OCEAN_DEVICE = 3
+ALL_DEVICE = -1
+
+FIRST_CALL_DELAY = 191#181 # first phone call delay in seconds
+END_CALL_DELAY =  650#401 # end phone call delay in seconds
+```
+
+## Leftovers
+
+from the old phoneCalls readme.md
+
+```zsh
+brew install portaudio
+cd Desktop/fish-phonebooth
+conda create -n fishphone python
+conda activate fishphone
+pip install pyaudio soundfile twilio pyserial pyautogui
 ```

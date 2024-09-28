@@ -383,25 +383,5 @@
         "uid": 76,
         "phoneNum": "+18586994993",
         "startTime": "Sun Apr  7 14:13:05 2024"
-    },
-    {
-        "uid": 77,
-        "phoneNum": "+13088800000",
-        "startTime": "Sun Apr  7 14:53:38 2024"
-    },
-    {
-        "uid": 78,
-        "phoneNum": "+11111111111",
-        "startTime": "Sun Apr  7 14:55:11 2024"
-    },
-    {
-        "uid": 79,
-        "phoneNum": "+13333333333",
-        "startTime": "Tue Sep 17 12:22:56 2024"
-    },
-    {
-        "uid": 80,
-        "phoneNum": "+10000000000",
-        "startTime": "Thu Sep 19 13:50:18 2024"
     }
 ]

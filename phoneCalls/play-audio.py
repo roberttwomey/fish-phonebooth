@@ -3,13 +3,17 @@ import wave
 import time
 import sys
 from datetime import datetime
-
 import pyaudio
+import os
+from dotenv import load_dotenv
+
+# load variables from .env file: 
+load_dotenv()
 
 # OCEAN INPUT
-oceanfile = "media/day2_lower.wav"
-speechfile = "media/day2_vocal.wav"
-audiencefile = "media/day2_All.wav"
+oceanfile = "media/day2_lower_16.wav"
+speechfile = "media/day2_vocal_16.wav"
+audiencefile = "media/day2_all_16.wav"
 
 # MIC RECORDING
 chunk = 1024  # Record in chunks of 1024 samples
@@ -19,14 +23,17 @@ fs = 48000  # Record at 44100 samples per second
 seconds = 3
 # filename = "output.wav"
 
+# Find your Account SID and Auth Token at twilio.com/console
+# and set the environment variables. See http://twil.io/secure
+MIC_DEVICE = int(os.getenv('MIC_DEVICE'))
+HEADPHONE_DEVICE = int(os.getenv('HEADPHONE_DEVICE'))
+OCEAN_DEVICE = int(os.getenv('OCEAN_DEVICE'))
+ALL_DEVICE = int(os.getenv('ALL_DEVICE'))
 
-microphone_device = 2#1
-headphone_device = 3#2
-motu_device = 1
-screen_device = 0#3
-
-def stop():
-    return
+# MIC_DEVICE = 2#2#1
+# HEADPHONE_DEVICE = 3#2
+# OCEAN_DEVICE = 1
+# screen_device = 0#3
 
 try: 
 
@@ -71,7 +78,7 @@ try:
                 oceanstream = p.open(format=p.get_format_from_width(wf.getsampwidth()),
                                 channels=wf.getnchannels(),
                                 rate=wf.getframerate(),
-                                output_device_index=motu_device,
+                                output_device_index=OCEAN_DEVICE,
                                 output=True,
                                 stream_callback=callback)
                 
@@ -79,17 +86,18 @@ try:
                 speechstream = p.open(format=p.get_format_from_width(wf2.getsampwidth()),
                                 channels=wf2.getnchannels(),
                                 rate=wf2.getframerate(),
-                                output_device_index=headphone_device,
+                                output_device_index=HEADPHONE_DEVICE,
                                 output=True,
                                 stream_callback=callback2)
 
-                # Open stream using callback (3)
-                audiencestream = p.open(format=p.get_format_from_width(wf3.getsampwidth()),
-                                channels=wf3.getnchannels(),
-                                rate=wf3.getframerate(),
-                                output_device_index=screen_device,
-                                output=True,
-                                stream_callback=callback3)
+                if ALL_DEVICE > 1:
+                    # Open stream using callback (3)
+                    audiencestream = p.open(format=p.get_format_from_width(wf3.getsampwidth()),
+                                    channels=wf3.getnchannels(),
+                                    rate=wf3.getframerate(),
+                                    output_device_index=ALL_DEVICE,
+                                    output=True,
+                                    stream_callback=callback3)
 
                 print('Recording')
 
@@ -97,7 +105,7 @@ try:
                     channels=channels,
                     rate=fs,
                     frames_per_buffer=chunk,
-                    input_device_index=microphone_device,
+                    input_device_index=MIC_DEVICE,
                     input=True)
 
                 frames = []  # Initialize array to store frames
@@ -115,8 +123,6 @@ except (KeyboardInterrupt):
     print("exiting...")
     pass
 
-
-
 # Close the stream (5)
 if wf._i_opened_the_file:
     oceanstream.close()
@@ -124,8 +130,9 @@ if wf._i_opened_the_file:
 if wf2._i_opened_the_file:
     speechstream.close()
 
-if wf3._i_opened_the_file:
-    audiencestream.close()
+if ALL_DEVICE > 0:
+    if wf3._i_opened_the_file:
+        audiencestream.close()
 
 # Stop and close the stream
 micstream.stop_stream()
@@ -136,16 +143,18 @@ p.terminate()
 
 print('Finished recording')
 
+print('Writing to disk...')
+sys.stdout.flush()
 # Save the recorded data as a WAV file
 current_timestamp = datetime.now()
 formatted_timestamp = current_timestamp.strftime('%Y%m%d-%H%M%S')
 filename = f"recordings/{formatted_timestamp}-mic.wav"
 
-wf3 = wave.open(filename, 'wb')
-wf3.setnchannels(channels)
-wf3.setsampwidth(p.get_sample_size(sample_format))
-wf3.setframerate(fs)
-wf3.writeframes(b''.join(frames))
-wf3.close()
+wf4 = wave.open(filename, 'wb')
+wf4.setnchannels(channels)
+wf4.setsampwidth(p.get_sample_size(sample_format))
+wf4.setframerate(fs)
+wf4.writeframes(b''.join(frames))
+wf4.close()
 
 print(f"wrote {filename} to disk")
