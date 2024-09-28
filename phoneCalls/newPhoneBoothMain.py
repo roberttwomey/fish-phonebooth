@@ -67,7 +67,7 @@ class PhoneBooth():
 		self.listObj = []
 		self.number = ''
 		self.value = ''
-		self.doorState = CLOSED #OPEN
+		self.doorState = OPEN
 
 		self.setup()
 
@@ -186,50 +186,7 @@ class PhoneBooth():
 				
 			if not DEBUG_LIGHTS:
 				self.lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
-			
-			# if not DEBUG_PHONECALL:
-			# 	handle = fishPhoneCall(self.uid, self.firstTime.hour, self.firstTime.minute, self.firstTime.second)
-			
-			# if handle == 'END':
-					
-			# 	# this cycle of phone call is done
-				
-			# 	if not DEBUG_AUDIO:
-			# 		self.audioProcess.terminate()
-			# 	if not DEBUG_LIGHTS:
-			# 		self.lightProcess.terminate()
-				
-			# 	self.write_read('n')
-				
-			# 	if not DEBUG_LIGHTS:
-			# 		# reset_blue
-			# 		subprocess.Popen(['python', '../bulb/blue.py']) # run once
-				
-			# 	time.sleep(5)
-			# 	return
-
-			# elif handle == 'CALLED':
-			# 	if not DEBUG_PHONECALL:
-			# 		handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
-				
-				# subprocess.Popen(['python', 'afterCalls.py'])
-				
-				# if handle == 'END':
-				# 	if not DEBUG_AUDIO:
-				# 		self.audioProcess.terminate()
-				# 	if not DEBUG_LIGHTS:
-				# 		self.lightProcess.terminate()
-					
-				# 	self.write_read('n')
-
-				# 	if not DEBUG_LIGHTS:
-				# 		# reset_blue
-				# 		subprocess.Popen(['python', '../bulb/blue.py']) # run once
-					
-				# 	time.sleep(5)
-				# 	return
-								
-			# lightProcess.terminate()
+	
 			return
 		
 		elif self.numberState == EXISTS: 
@@ -237,45 +194,10 @@ class PhoneBooth():
 			if not DEBUG_AUDIO:
 				self.audioProcess = subprocess.Popen(['python', 'play-audio.py'])
 			
-			# lightProcess = subprocess.Popen(['python', '../../govee-btled-controller/descent_reidVersion.py'])
+			if not DEBUG_LIGHTS:
+				self.lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
 			
-			# if not DEBUG_PHONECALL:
-			# 	handle = fishPhoneCall(uid, firstTime.hour, firstTime.minute, firstTime.second)
-			
-			# if handle == 'END':
-			# 	if not DEBUG_AUDIO:
-			# 		self.audioProcess.terminate()
-
-			# 	if not DEBUG_LIGHTS:
-			# 		self.lightProcess.terminate()
-
-			# 	self.write_read('n') # signal arduino
-
-			# 	if not DEBUG_LIGHTS:
-			# 		# reset_blue
-			# 		subprocess.Popen(['python', '../bulb/blue.py']) # run once
-
-			# elif handle == 'CALLED':
-			# 	if not DEBUG_PHONECALL:
-			# 		handle = fishPhoneCall(uid, endTime.hour, endTime.minute, endTime.second)
-				
-			# 	# subprocess.Popen(['python', 'afterCalls.py'])
-				
-			# 	if handle == 'END':
-			# 		if not DEBUG_AUDIO:
-			# 			self.audioProcess.terminate()
-
-			# 		if not DEBUG_LIGHT:
-			# 			self.lightProcess.terminate()
-
-			# 		self.write_read('n')
-
-			# 		if not DEBUG_LIGHTS:
-			# 			# reset_blue
-			# 			subprocess.Popen(['python', '../bulb/blue.py']) # run once
-
-			# # lightProcess.terminate()
-			# return
+			return
 		
 		elif self.numberState == INVALID: 
 			print("Invalid Phone Number")
