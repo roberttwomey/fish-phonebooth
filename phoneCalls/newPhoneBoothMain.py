@@ -18,9 +18,11 @@ from dotenv import load_dotenv
 # load variables from .env file: 
 load_dotenv()
 
-FIRST_CALL_DELAY = 191#181 # call delay in seconds
-END_CALL_DELAY =  650#401 # call delay in seconds
+# FIRST_CALL_DELAY = 191#181 # call delay in seconds
+# END_CALL_DELAY =  650#401 # call delay in seconds
 
+FIRST_CALL_DELAY = int(os.getenv('FIRST_CALL_DELAY'))
+END_CALL_DELAY =  int(os.getenv('END_CALL_DELAY'))
 
 DEBUG_ARDUINO = os.getenv('DEBUG_ARDUINO') == 'True'
 DEBUG_PHONECALL = os.getenv('DEBUG_PHONECALL') == 'True'
@@ -42,13 +44,16 @@ if not DEBUG_LIGHTS:
 
 #write_read('w')
 
+# door state
 CLOSED = 0
 OPEN = 1
 
+# phone number
 NEW = 0
 EXISTS = 1
 INVALID = 3
 
+# program state
 WAITING_TO_START = 0
 KEYBOARD_ENTRY = 1
 RUNNING_PROGRAM = 2
@@ -62,7 +67,7 @@ class PhoneBooth():
 		self.listObj = []
 		self.number = ''
 		self.value = ''
-		self.doorState = OPEN
+		self.doorState = CLOSED #OPEN
 
 		self.setup()
 
@@ -73,14 +78,16 @@ class PhoneBooth():
 		self.runProgram = False
 		self.isDone = False
 
-		self.uid = None
+		# phone number
 		self.numberState = None
-		self.handle = None
+		self.uid = None
+		
+		# phone calls
 		self.firstTime = None
 		self.endTime = None
-
 		self.firstCalled = False
-		# self.waiting = False
+		self.endCalled = False
+		self.waitingToCall = False
 
 
 	def setup(self):
@@ -117,11 +124,13 @@ class PhoneBooth():
 		if data == 'n' or data == '~':
 			if not DEBUG_ARDUINO: 
 				arduinoDoor.write(bytes(x, 'utf-8'))
-			print(data+" --> door arduino")
+			else:
+				print(data+" --> door arduino")
 
 		if not DEBUG_ARDUINO: 
 			arduinoScreen.write(bytes(x, 'utf-8'))
-		print(data+" --> screen arduino")
+		else:
+			print(data+" --> screen arduino")
 
 		return data
 	
@@ -442,7 +451,7 @@ if __name__ == '__main__':
 						booth.waitingToCall = True
 						print("finished first call")
 				else: 
-					result = updatePhoneCall(booth.uid, booth.endTime.hour, booth.endTime.minute, booth.endTime.second)
+					result = updateFishPhoneCall(booth.uid, booth.endTime.hour, booth.endTime.minute, booth.endTime.second)
 					if result == 'WAITING' and not booth.waitingToCall:
 						booth.waitingToCall = True
 						print("waiting until", booth.endTime.hour, ":", booth.endTime.minute, ":", booth.endTime.second, "to call\n")
@@ -464,9 +473,7 @@ if __name__ == '__main__':
 	except KeyboardInterrupt:
 		print('Interrupted... quitting')
 
-	print(booth.doorState, booth.runProgram, booth.runKeyboardInput, booth.isDone, lastDoorState, timeDoorLastChanged)
-	print("vision is done. ")
-	# print "freeing resources"
-	
+	print("Booth cleanup")
 	booth.reset()
+	print("Vision Cleanup")
 	vision.cleanup()
