@@ -4,16 +4,22 @@ import asyncio
 import numpy as np
 
 bulb = '74209773-2F79-D43E-5EE9-AEF071CEA34C'
-lightbar1 = 'EA5D5E0C-AD67-8D3D-2ABE-501A97DA4077'
-lightbar2 = '46A48234-B7BF-80C1-8A7F-F66A3FA977B5'
+lightbar1 = '44ADBA7B-66E7-F108-D84B-2C4C87504092'
+lightbar2 = 'B845E65A-83D0-D7DF-EA68-5B0CA817B783'
 
 async def main():
     # Replace this with your LED's MAC address
     thismac = lightbar1
+    # thismac = lightbar1
     led = BluetoothLED(thismac)
+    led2 = BluetoothLED(lightbar2)
+    # led = BluetoothLED(thismac)
     if await led.init_and_connect():
         print("connected {thismac}")
-    
+
+    if await led2.init_and_connect():
+        print("connected {lightbar2}")
+
     # await led.set_state(False) # off
     # time.sleep(1.5)
     # await led.set_state(True) # on
@@ -45,22 +51,114 @@ async def main():
 
     # OCEAN DESCENT
     # colors https://www.w3.org/TR/css-color-3/#svg-color
+    # time.sleep(5)
+
     await led.set_brightness(0.5)
-    await led.set_color_bar('white')
-    time.sleep(3)
-    await led.set_color_bar('cyan')
-    time.sleep(3)
+    await led2.set_brightness(0.5)
     await led.set_color_bar('blue')
-    time.sleep(3)
-    await led.set_color_bar('darkblue')
-    time.sleep(3)
-    await led.set_color_bar('navy')
-    time.sleep(3)
-    await led.set_color_bar('midnightblue')
-    # await led.set_brightness(0.1)
-    time.sleep(3)
+    await led2.set_color_bar('blue')
+    b = 0.5
+
+    while b > 0.01:
+        await led.set_brightness(b)
+        await led2.set_brightness(b)
+        time.sleep(0.1)
+        b -= 0.01
+
+    await led.set_brightness(0)
+    await led2.set_brightness(0)
     await led.set_color_bar('black')
+    await led2.set_color_bar('black')
+
+    time.sleep(5)
     
+    await led.set_brightness(0)
+    await led2.set_brightness(0)
+    await led.set_color_bar('blue')
+    await led2.set_color_bar('blue')
+
+    while b < 0.49:
+        await led.set_brightness(b)
+        await led2.set_brightness(b)
+        time.sleep(0.1)
+        b += 0.01
+
+
+    #Reid Test 1
+    # await led.set_brightness(0.5)
+    # await led2.set_brightness(0.5)
+    # # await led.set_color_bar('white')
+    # # await led2.set_color_bar('white')
+    # # time.sleep(5)
+    # await led.set_color_bar('blue')
+    # await led2.set_color_bar('blue')
+
+    # time.sleep(3)
+    # await led.set_brightness(0.25)
+    # await led2.set_brightness(0.25)
+
+    # time.sleep(3)
+    # await led.set_brightness(0.1)
+    # await led2.set_brightness(0.1)
+
+    # time.sleep(3)
+    # await led.set_brightness(0)
+    # await led2.set_brightness(0)
+    # await led.set_color_bar('black')
+    # await led2.set_color_bar('black')
+
+    # time.sleep(5)
+    
+    # await led.set_brightness(0)
+    # await led2.set_brightness(0)
+    # await led.set_color_bar('blue')
+    # await led2.set_color_bar('blue')
+    # time.sleep(5)
+    # await led.set_brightness(0.1)
+    # await led2.set_brightness(0.1)
+    # time.sleep(3)
+    # await led.set_brightness(0.25)
+    # await led2.set_brightness(0.25)
+    # time.sleep(3)
+    # await led.set_brightness(0.5)
+    # await led2.set_brightness(0.5)
+
+
+    # time.sleep(3)
+    # await led.set_color_bar('blue')
+    # await led2.set_color_bar('blue')
+    # time.sleep(3)
+    # await led.set_color_bar('darkblue')
+    # await led2.set_color_bar('darkblue')
+    # time.sleep(3)
+    # await led.set_color_bar('navy')
+    # await led2.set_color_bar('navy')
+    # time.sleep(3)
+    # await led.set_color_bar('midnightblue')
+    # await led2.set_color_bar('midnightblue')
+    # # await led.set_brightness(0.1)
+    # time.sleep(3)
+    # await led.set_color_bar('black')
+    # await led2.set_color_bar('black')
+    
+    # time.sleep(3)
+    
+    # await led.set_color_bar('midnightblue')
+    # await led2.set_color_bar('midnightblue')
+    # time.sleep(3)
+    # await led.set_color_bar('navy')
+    # await led2.set_color_bar('navy')
+    # time.sleep(3)
+    # await led.set_color_bar('blue')
+    # await led2.set_color_bar('blue')
+    # time.sleep(3)
+    # await led.set_color_bar('cyan')
+    # await led2.set_color_bar('cyan')
+
+
+    # time.sleep(5)
+    # await led.set_color_bar('white')
+    # await led2.set_color_bar('white')
 
     # await led.set_color_white(-1.0)
     # time.sleep(1.5)

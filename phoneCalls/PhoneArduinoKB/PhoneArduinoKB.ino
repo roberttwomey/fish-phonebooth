@@ -88,14 +88,15 @@ void setup() {
   // analogWrite(3,Contrast);
   lcd.begin(16, 2);
   // Print a message to the LCD.
-  lcd.print("Enter Phone #: ");
+  lcd.print("CLOSE DOOR TO   ");
   
   lcd.setCursor(0, 1);
-  lcd.print("+1");
+  lcd.print("BEGIN ><>   ><>  ");
+  // lcd.print("+1");
 
-  lcd.setCursor(3, 1);
-  lcd.print(num);
-  lcd.setCursor(3, 1);
+  // lcd.setCursor(3, 1);
+  // lcd.print(num);
+  // lcd.setCursor(3, 1);
   
   Serial.begin(9600);
 }
@@ -120,13 +121,14 @@ void showNewData() {
         lcd.print(receivedChar);
         newData = false;
       }
-      else if(receivedChar != '*' && receivedChar != 'n' &&col <=9){
+      else if(receivedChar != '*' && receivedChar != 'n' && receivedChar != 'w' && col <=9){
         lcd.setCursor(col+3, 1);
         
         lcd.print(receivedChar);
         col++;
         newData = false;
       }
+      
       else if(receivedChar == '~'){
         
         lcd.setCursor(0, 1);
@@ -145,12 +147,26 @@ void showNewData() {
         lcd.print("                   ");
         delay(5000);
         lcd.setCursor(0, 0);
+        lcd.print("CLOSE DOOR TO    ");
+        lcd.setCursor(0, 1);
+        lcd.print("BEGIN ><>   ><>  ");
+        col = 0;
+        newData = false;
+      }
+      else if(receivedChar == 'w'){
+        lcd.setCursor(0, 0);
+        lcd.print("STARTING . . .    ");
+        lcd.setCursor(0, 1);
+        lcd.print("                   ");
+        delay(5000);
+        lcd.setCursor(0, 0);
         lcd.print("Enter Phone #:      ");
         lcd.setCursor(0, 1);
         lcd.print("+1 **********     ");
         col = 0;
         newData = false;
       }
+      
     }
 }
 //  while (!Serial.available()); 
