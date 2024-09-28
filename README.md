@@ -1,5 +1,9 @@
 # fish-phonebooth
-Code for WOW 2024 Project
+Code for Fish Phone Booth at the Birch Aquarium, as part of Embodied Pacific // PST 2024
+
+code by:
+Reid Brockmeier
+Robert Twomey
 
 # Install
 
