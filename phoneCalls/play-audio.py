@@ -11,9 +11,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # OCEAN INPUT
-oceanfile = "media/day2_lower_16.wav"
-speechfile = "media/day2_vocal_16.wav"
-audiencefile = "media/day2_all_16.wav"
+oceanfile = "media/day2_lower.wav"
+speechfile = "media/day2_vocal.wav"
+audiencefile = "media/day2_all.wav"
+# oceanfile = "media/day2_lower_16.wav"
+# speechfile = "media/day2_vocal_16.wav"
+# audiencefile = "media/day2_all_16.wav"
 
 # MIC RECORDING
 chunk = 1024  # Record in chunks of 1024 samples
