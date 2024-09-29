@@ -186,17 +186,17 @@ class PhoneBooth():
 				
 			if not DEBUG_LIGHTS:
 				self.lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
-	
+			
 			return
 		
 		elif self.numberState == EXISTS: 
 			print("Number already stored at uid: ", self.uid)
 			if not DEBUG_AUDIO:
 				self.audioProcess = subprocess.Popen(['python', 'play-audio.py'])
-			
+
 			if not DEBUG_LIGHTS:
 				self.lightProcess = subprocess.Popen(['python', '../bulb/descent_reidVersion.py'])
-			
+				
 			return
 		
 		elif self.numberState == INVALID: 

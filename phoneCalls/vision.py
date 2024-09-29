@@ -156,7 +156,7 @@ class VisionSystem:
 		# booth camera
 		self.cap2 = cv2.VideoCapture(0) # booth cam is device 0
 		if self.cap2 is None:
-			print("Couldn't open overhead camera")
+			print("Couldn't open frontal camera")
 			exit(0)
 		
 		# proportionally scaled to match fit within 
