@@ -59,11 +59,10 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>if [ -f "/path/to/anaconda3/etc/profile.d/conda.sh" ]; then
-    . "/path/to/anaconda3/etc/profile.d/conda.sh"
-    CONDA_CHANGEPS1=false conda activate fishphone
-fi
-cd ~/Desktop/fish-phonebooth/phoneCalls
+					<string>cd ~/Desktop/fish-phonebooth/phoneCalls
+path=('/opt/homebrew/anaconda3/envs/fishphone/bin/' $path)
+export PATH
+conda activate fishphone
 /opt/homebrew/anaconda3/envs/fishphone/bin/python runFishPhoneBooth.py</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
@@ -73,6 +72,25 @@ cd ~/Desktop/fish-phonebooth/phoneCalls
 					<string>/bin/zsh</string>
 					<key>source</key>
 					<string></string>
+				</dict>
+				<key>ActionRuntimeParameters</key>
+				<dict>
+					<key>COMMAND_STRING</key>
+					<string>cd ~/Desktop/fish-phonebooth/phoneCalls
+path=('/opt/homebrew/anaconda3/envs/fishphone/bin/' $path)
+export PATH
+conda activate fishphone
+/opt/homebrew/anaconda3/envs/fishphone/bin/python runFishPhoneBooth.py</string>
+					<key>CheckedForUserDefaultShell</key>
+					<true/>
+					<key>inputMethod</key>
+					<integer>0</integer>
+					<key>shell</key>
+					<string>/bin/zsh</string>
+					<key>source</key>
+					<string></string>
+					<key>temporary items path</key>
+					<string>/var/folders/zc/wk7mfb7d31j6wrmdq687dxsr0000gn/T/10067488-5CD4-4B93-8F4E-3F3C336CDFE7/1/com.apple.RunShellScript</string>
 				</dict>
 				<key>BundleIdentifier</key>
 				<string>com.apple.RunShellScript</string>
