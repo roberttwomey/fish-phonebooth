@@ -59,9 +59,12 @@
 				<key>ActionParameters</key>
 				<dict>
 					<key>COMMAND_STRING</key>
-					<string>cd ~/fish-phonebooth/phoneCalls
-conda activate fishphone
-/opt/homebrew/opt/python@3.12/libexec/bin/python runFishPhoneBooth.py</string>
+					<string>if [ -f "/path/to/anaconda3/etc/profile.d/conda.sh" ]; then
+    . "/path/to/anaconda3/etc/profile.d/conda.sh"
+    CONDA_CHANGEPS1=false conda activate fishphone
+fi
+cd ~/Desktop/fish-phonebooth/phoneCalls
+/opt/homebrew/anaconda3/envs/fishphone/bin/python runFishPhoneBooth.py</string>
 					<key>CheckedForUserDefaultShell</key>
 					<true/>
 					<key>inputMethod</key>

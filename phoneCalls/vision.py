@@ -142,7 +142,7 @@ class VisionSystem:
 		self.showMask = False
 		self.fullResolution = True
 
-		self.outputsize = 800
+		self.outputsize = 800#800 # rescales input video
 
 		self.targetWidth = 1280
 		self.targetHeight = 800
@@ -163,8 +163,11 @@ class VisionSystem:
 		# set up overhead capture
 		# self.cap1 = cv2.VideoCapture(VIDEO_FILE)
 		self.cap1 = cv2.VideoCapture(self.CAM1)
-		self.cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
-		self.cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+		# net cam 2880 x 2160 native or 2048 x 1536
+		# self.cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
+		# self.cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+		self.cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 2048)
+		self.cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, 1536)
 		self.cap1.set(cv2.CAP_PROP_FPS, 15)
 
 		if self.cap1 is None:
@@ -174,6 +177,7 @@ class VisionSystem:
 		# configure size and buffers
 		self.width = self.cap1.get(3)
 		self.height = self.cap1.get(4)
+		print("camera size: ", self.width, self.height)
 
 		# booth camera
 		self.cap2 = cv2.VideoCapture(int(self.CAM2))#self.CAM2) # booth cam is device 0
@@ -296,7 +300,7 @@ class VisionSystem:
 							foundTrail = True
 
 					if not foundTrail:
-						self.trails.append(deque(maxlen=10000))
+						self.trails.append(deque(maxlen=1000))
 						self.trails[-1].appendleft(center)
 		
 		masked = cv2.bitwise_and(dataframe, dataframe, mask=fgmask)

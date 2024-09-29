@@ -101,6 +101,10 @@ class PhoneBooth():
 			self.audioProcess.terminate()
 		if self.lightProcess:
 			self.lightProcess.terminate()
+		
+		if not DEBUG_LIGHTS:
+			self.lightProcess = subprocess.Popen(['python', '../bulb/blue.py'])
+			
 		self.write_read('n') # turn off "On Air" light
 		self.number = ''
 		self.value = ''
@@ -178,7 +182,7 @@ class PhoneBooth():
 			self.listObj.append({"uid": self.uid, 'phoneNum': formNum, 'startTime': time.strftime("%c")})
 			
 			if not DEBUG_STORAGE:
-				with open(filename, 'w') as json_file:
+				with open(self.filename, 'w') as json_file:
 					json.dump(self.listObj, json_file, 
 						indent=4,  
 						separators=(',',': '))
@@ -368,6 +372,8 @@ if __name__ == '__main__':
 							booth.boothState = WAITING_TO_START
 							print("... was running but door has been open for 5 secs... resetting.")
 							booth.reset()
+				else:
+					lastDoorState = CLOSED
 
 			if booth.boothState == RUNNING_PROGRAM:
 				if not booth.firstCalled:
