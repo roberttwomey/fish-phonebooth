@@ -130,6 +130,7 @@ class VisionSystem:
 
 		load_dotenv()
 		self.CAM1 = os.getenv('CAM1')
+		self.CAM2 = os.getenv('CAM2')
 
 	def start(self):
 		# set up the various parts of the background and video
@@ -154,7 +155,7 @@ class VisionSystem:
 		self.height = self.cap1.get(4)
 
 		# booth camera
-		self.cap2 = cv2.VideoCapture(0) # booth cam is device 0
+		self.cap2 = cv2.VideoCapture(int(self.CAM2))#self.CAM2) # booth cam is device 0
 		if self.cap2 is None:
 			print("Couldn't open frontal camera")
 			exit(0)
