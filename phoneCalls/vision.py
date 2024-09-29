@@ -13,8 +13,6 @@ import sys
 from collections import deque
 import json
 
-SHOW_TIMER_TEXT = True
-
 # https://github.com/ContinuumIO/anaconda-issues/issues/223
 # a better video write (alternative to opencv videowriter)
 # https://github.com/scikit-video/scikit-video
@@ -152,6 +150,8 @@ class VisionSystem:
 		load_dotenv()
 		self.CAM1 = os.getenv('CAM1')
 		self.CAM2 = os.getenv('CAM2')
+
+		self.showTimerText = os.getenv('SHOW_TIMER_TEXT') == 'True'
 
 	def start(self):
 		# set up the various parts of the background and video
@@ -366,7 +366,7 @@ class VisionSystem:
 			frame2[:, -1*ir_frame2.shape[1]:] = ir_frame2[:,:]
 
 		# show time left text
-		if SHOW_TIMER_TEXT:
+		if self.showTimerText:
 			if time_left < 0:
 				# timer_text = format_time_hundredths(time_left)
 				timer_text = "READY"
