@@ -13,6 +13,8 @@ import sys
 from collections import deque
 import json
 
+SHOW_TIMER_TEXT = True
+
 # https://github.com/ContinuumIO/anaconda-issues/issues/223
 # a better video write (alternative to opencv videowriter)
 # https://github.com/scikit-video/scikit-video
@@ -100,6 +102,25 @@ def translate_image(image, xoffset, yoffset):
 		)
 
 		return translated_image
+
+def format_time_hundredths(seconds):
+    # Calculate minutes, whole seconds, and hundredths of a second
+    minutes = int(seconds // 60)
+    seconds_whole = int(seconds % 60)
+    hundredths = int((seconds - int(seconds)) * 100)
+
+    # Format as "minutes seconds hundredths"
+    formatted_time = f"{int(minutes):02}:{int(seconds_whole):02}.{hundredths:02}"
+    return formatted_time
+
+def format_time_seconds(seconds):
+    # Calculate minutes, whole seconds, and hundredths of a second
+    minutes = int(seconds // 60)
+    seconds_whole = int(seconds % 60)
+
+    # Format as "minutes seconds hundredths"
+    formatted_time = f"{int(minutes):02}:{int(seconds_whole):02}"
+    return formatted_time
 
 VIDEO_FILE = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
 NETWORK_CAMERA = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
@@ -199,7 +220,7 @@ class VisionSystem:
 		# stores motion trails
 		self.trails = []
 
-	def update(self):
+	def update(self, time_left=-1):
 		ret, frame = self.cap1.read()
 
 		if not ret:
@@ -344,6 +365,36 @@ class VisionSystem:
 			# copy cam2 into right hand side of main feed
 			frame2[:, -1*ir_frame2.shape[1]:] = ir_frame2[:,:]
 
+		# show time left text
+		if SHOW_TIMER_TEXT:
+			if time_left < 0:
+				# timer_text = format_time_hundredths(time_left)
+				timer_text = "READY"
+			else:
+				timer_text = format_time_seconds(time_left)
+
+			# Define text parameters
+			font = cv2.FONT_HERSHEY_SIMPLEX
+			font_scale = 2
+			font_color = (0, 0, 255)  # White color
+			thickness = 10
+			# text_size = cv2.getTextSize(timer_text, font, font_scale, thickness)[0]
+			text_size = cv2.getTextSize("READY", font, font_scale, thickness)[0]
+
+			# Position the text at the bottom-right corner
+			text_x = self.targetWidth - int(text_size[0]*0.5) - int(0.5*ir_frame2.shape[1]) #- 10
+			text_y = self.targetHeight - text_size[1] - 20
+
+			# Draw a black rectangle behind the text
+			cv2.rectangle(frame2, 
+						(text_x - 10, text_y - text_size[1] - 10),  # Top-left corner
+						(text_x + text_size[0] + 5, text_y + 15),  # Bottom-right corner
+						(0, 0, 0),  # Black color
+						thickness=cv2.FILLED)  # Fill the rectangle
+		
+			# Add text to the image
+			cv2.putText(frame2, timer_text, (text_x, text_y), font, font_scale, font_color, thickness)
+
 		cv2.imshow('tracking',frame2)
 
 		if self.doWrite:
@@ -396,6 +447,8 @@ if __name__ == '__main__':
 	# print "freeing resources"
 
 	vision.cleanup()
+
+
 
 # if __name__ == '__main__':
 # 	# global doWrite, infile, outpath
