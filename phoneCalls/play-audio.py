@@ -95,14 +95,14 @@ try:
                                 output=True,
                                 stream_callback=callback2)
 
-                if ALL_DEVICE > 1:
-                    # Open stream using callback (3)
-                    audiencestream = p.open(format=p.get_format_from_width(wf3.getsampwidth()),
-                                    channels=wf3.getnchannels(),
-                                    rate=wf3.getframerate(),
-                                    output_device_index=ALL_DEVICE,
-                                    output=True,
-                                    stream_callback=callback3)
+                # if ALL_DEVICE > ÷\1:
+                # Open stream using callback (3)
+                audiencestream = p.open(format=p.get_format_from_width(wf3.getsampwidth()),
+                                channels=wf3.getnchannels(),
+                                rate=wf3.getframerate(),
+                                output_device_index=ALL_DEVICE,
+                                output=True,
+                                stream_callback=callback3)
 
                 print('Recording')
 
