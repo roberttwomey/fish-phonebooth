@@ -64,6 +64,8 @@ async def main():
     await led2.set_color_bar('blue')
     b = 0.5
     
+    #print("going Down")
+
     # Go Down
     while b > 0.01:
         await led.set_brightness(b)
