@@ -3,7 +3,7 @@ from govee_btled_windows import BluetoothLED
 import asyncio
 import numpy as np
 
-bulb = '74209773-2F79-D43E-5EE9-AEF071CEA34C'
+# bulb = '74209773-2F79-D43E-5EE9-AEF071CEA34C'
 # lightbar1 = '44ADBA7B-66E7-F108-D84B-2C4C87504092'
 # lightbar2 = 'B845E65A-83D0-D7DF-EA68-5B0CA817B783'
 lightbar1 = '91C750AC-847E-2B8A-BC4D-2ECF32BD1E43'
