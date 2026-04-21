@@ -12,6 +12,14 @@ import argparse
 import sys
 from collections import deque
 import json
+import time
+
+import norfair
+from norfair.tracker import Tracker
+
+def euclidean_distance(detection, tracked_object):
+	return np.linalg.norm(detection.points - tracked_object.estimate)
+
 
 # https://github.com/ContinuumIO/anaconda-issues/issues/223
 # a better video write (alternative to opencv videowriter)
@@ -120,29 +128,47 @@ def format_time_seconds(seconds):
     formatted_time = f"{int(minutes):02}:{int(seconds_whole):02}"
     return formatted_time
 
-VIDEO_FILE = "/Volumes/Work/Projects/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
+VIDEO_FILE = "/Volumes/Work/bigdata/housemachine/data/ceiling/livingroom/livingroom_motion_2017-08-13_20.17.02_27.mp4"
 NETWORK_CAMERA = "rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0"
 
 class VisionSystem:
-	def __init__(self):
+	def __init__(self, args=None):
 		'''
 		Creates a CameraDisplay object that will process incoming frames and 
 		'''
 		
-		self.doWrite = False
-		self.doHeadless = False
-		self.doUndistort = False
+		if args is None:
+			# Default values when no args provided
+			self.doWrite = False
+			self.doHeadless = False
+			self.doUndistort = False
+			self.minBlobSize = 400.0
+			self.maxBlobSize = 50000.0
+			self.searchRadius = 50.0
+			self.doConvexHull = False
+			self.hullDist = 150.0
+			self.video_file = VIDEO_FILE
+			self.output_video = 'vision_output.mp4'
+		else:
+			self.doWrite = args.write
+			self.doHeadless = args.headless
+			self.doUndistort = False
 
-		self.minBlobSize = 600.0
-		self.maxBlobSize = 50000.0
-		self.searchRadius = 70.0
+			self.minBlobSize = args.minblob if hasattr(args, 'minblob') else 400.0
+			self.maxBlobSize = 50000.0
+			self.searchRadius = args.radius if hasattr(args, 'radius') else 50.0
+			self.doConvexHull = getattr(args, 'convexhull', False)
+			self.hullDist = getattr(args, 'hulldist', 150.0)
+
+			self.maxNumTrails = 50
+			self.video_file = getattr(args, 'video', VIDEO_FILE)
+			self.output_video = getattr(args, 'output', 'vision_output.mp4')
 
 		self.maxNumTrails = 50
-
-		self.showMask = False
+		self.showMask = True
 		self.fullResolution = True
 
-		self.outputsize = 800#800 # rescales input video
+		self.outputsize = 600#800 # rescales input video
 
 		self.targetWidth = 1280
 		self.targetHeight = 800
@@ -153,15 +179,19 @@ class VisionSystem:
 
 		self.showTimerText = os.getenv('SHOW_TIMER_TEXT') == 'True'
 
+		self.frame_count = 0
+		self.total_time = 0
+
 	def start(self):
 		# set up the various parts of the background and video
 		self.setup_video()
+		self.setup_recording()
 		self.setup_gui()
 		self.setup_cv()
 
 	def setup_video(self):
 		# set up overhead capture
-		# self.cap1 = cv2.VideoCapture(VIDEO_FILE)
+		# self.cap1 = cv2.VideoCapture(self.video_file)
 		self.cap1 = cv2.VideoCapture(self.CAM1)
 		# net cam 2880 x 2160 native or 2048 x 1536
 		# self.cap1.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
@@ -189,15 +219,19 @@ class VisionSystem:
 		self.outheight = self.outputsize
 		self.scalef = float(self.outputsize)/float(self.height)
 		self.outwidth = int(self.scalef*self.width)
-	
+		print("resized frame: ", self.outwidth, self.outheight)
+
 		# create mask to mask aroud circular fisheye frame
 		self.circlemask = np.zeros((self.outheight, self.outwidth), np.uint8)
 		cv2.circle(self.circlemask, (int(self.outwidth/2), int(self.outheight/2)), int(self.outputsize*0.45), (255, 255, 255), -1)
 
 	def setup_recording(self):
-		print("recording / file output not yet implemented")
-		# don't need video output for now
-		return
+		if not self.doWrite:
+			return
+		fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+		# Save video out to the exact final output layout (targetWidth x targetHeight)
+		self.out = cv2.VideoWriter(self.output_video, fourcc, 15.0, (self.targetWidth, self.targetHeight))
+		print(f"Writing video output to {self.output_video}")
 
 	def setup_gui(self):
 		# Create a named window
@@ -219,12 +253,16 @@ class VisionSystem:
 
 		# history = 50
 		# fgbg = cv2.createBackgroundSubtractorMOG2(history = history, detectShadows=True)
-		self.fgbg = cv2.createBackgroundSubtractorKNN(detectShadows = True) # default history 500 frames
+		# disabling shadows (False) helps unite a person's upper body with their floor shadow as one unit
+		# self.fgbg = cv2.createBackgroundSubtractorKNN(history=500, dist2Threshold=400.0, detectShadows=False)
+		self.fgbg = cv2.createBackgroundSubtractorKNN(history=500, dist2Threshold=400.0, detectShadows=True)
 		
-		# stores motion trails
-		self.trails = []
+		# Replace trails with norfair tracker
+		self.tracker = Tracker(distance_function=euclidean_distance, distance_threshold=self.searchRadius)
+		self.tracked_paths = {}
 
 	def update(self, time_left=-1):
+		start_time = time.time()
 		ret, frame = self.cap1.read()
 
 		if not ret:
@@ -235,94 +273,123 @@ class VisionSystem:
 		if frame is None:
 			return
 
+		resize_start = time.time()
 		dataframe = cv2.resize(frame, (self.outwidth, self.outheight))
+		resize_time = time.time() - resize_start
 
 				# print "mask"
 		maskedframe = cv2.bitwise_and(dataframe, dataframe, mask = self.circlemask)
 
 		# frame = cv2.fisheye.undistortImage(frame, K, D=D, Knew=Knew)
 
-		# ADVANCED BGSEGM METHODS
-		fgmask = self.fgbg.apply(maskedframe)
+		# Pre-process with Gaussian Blur to reduce noise and help blob fusion
+		blurred_frame = cv2.GaussianBlur(maskedframe, (3, 3), 0)
 
-		# print "threshold"
-		ret, thresh = cv2.threshold(fgmask, 244, 255, cv2.THRESH_BINARY)
+		# ADVANCED BGSEGM METHODS
+		fgmask = self.fgbg.apply(blurred_frame)
+
+		# print("threshold")
+		ret, thresh = cv2.threshold(fgmask, 200, 255, cv2.THRESH_BINARY)
 
 		if thresh is None:
 			return
 
-		# print "dilate"
-		thresh = cv2.dilate(thresh, None, iterations=3)
+		# Enhanced Morphology Pipeline
+		# 1. Close holes inside the foreground objects (reconnecting stray legs/arms to the body)
+		kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+		thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel, iterations=2)
+		
+		# 2. Aggressive Dilation to merge fragmented torso/limb shapes into a single whole-body blob
+		thresh = cv2.dilate(thresh, kernel, iterations=3)
 
 		# print "find contours"
 		cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
 
+		norfair_detections = []
+
 		if len(cnts) > 0:
 			(newcnts, areas) = sort_by_area(cnts)
 
+			valid_cnts = []
 			for i in range(len(newcnts)):
-				cnt = newcnts[i]
-				area = areas[i]
+				if areas[i] > self.minBlobSize and areas[i] < self.maxBlobSize:
+					valid_cnts.append(newcnts[i])
 
-				if area > self.minBlobSize and area < self.maxBlobSize:
-					if self.fullResolution:
-						largecnt = []
-						for point in cnt:
-							largepoint = point / self.scalef
-							largecnt.append(largepoint)
-						largecnt = np.array(largecnt)
-						cnt = np.array(largecnt).reshape((-1,1,2)).astype(np.int32)
-						cv2.drawContours(frame, [cnt], 0, (0, 255, 0), int(self.width/213))
+			if self.doConvexHull and len(valid_cnts) > 0:
+				grouped_cnts = []
+				used = [False] * len(valid_cnts)
+				for i in range(len(valid_cnts)):
+					if used[i]: continue
+					current_group = [valid_cnts[i]]
+					used[i] = True
+					queue = [valid_cnts[i]]
+					
+					while queue:
+						curr = queue.pop(0)
+						# Use bounding box center for proximity measure
+						x,y,w,h = cv2.boundingRect(curr)
+						cx_c, cy_c = x + w/2.0, y + h/2.0
 						
-					else:
-						cv2.drawContours(frame, [cnt], 0, (0, 255, 0), 3)
+						for j in range(len(valid_cnts)):
+							if not used[j]:
+								xj,yj,wj,hj = cv2.boundingRect(valid_cnts[j])
+								cx_j, cy_j = xj + wj/2.0, yj + hj/2.0
+								dist = np.linalg.norm(np.array([cx_c, cy_c]) - np.array([cx_j, cy_j]))
+								
+								if dist < self.hullDist:
+									queue.append(valid_cnts[j])
+									current_group.append(valid_cnts[j])
+									used[j] = True
+					
+					merged_cnt = np.vstack(current_group)
+					hull = cv2.convexHull(merged_cnt)
+					grouped_cnts.append(hull)
+				valid_cnts = grouped_cnts
 
-					# perimeter = cv2.arcLength(cnt,True)
+			for cnt in valid_cnts:
+				if self.fullResolution:
+					largecnt = []
+					for point in cnt:
+						largepoint = point / self.scalef
+						largecnt.append(largepoint)
+					largecnt = np.array(largecnt)
+					cnt = np.array(largecnt).reshape((-1,1,2)).astype(np.int32)
+					cv2.drawContours(frame, [cnt], 0, (0, 255, 0), int(self.width/213))
+				else:
+					cv2.drawContours(frame, [cnt], 0, (0, 255, 0), 3)
 
-					M = cv2.moments(cnt.astype(np.float32))
+				M = cv2.moments(cnt.astype(np.float32))
 
-					# center of mass
+				# Avoid division by zero if moment is very tiny
+				if M['m00'] != 0:
 					cx = M['m10']/M['m00']
 					cy = M['m01']/M['m00']
+				else:
+					x,y,w,h = cv2.boundingRect(cnt)
+					cx, cy = x + w/2.0, y + h/2.0
 
-					center = (cx, cy)
-					foundTrail = False
+				norfair_detections.append(norfair.Detection(points=np.array([[cx, cy]]), scores=np.array([1.0])))
 
-					for trail in self.trails:
-						if len(trail) == 0:
-							trail.appendleft(center)
-							break
-
-						dist = np.linalg.norm(np.array(trail[0])-np.array(center))
-
-						if dist < self.searchRadius:
-							trail.appendleft(center)
-							foundTrail = True
-
-					if not foundTrail:
-						self.trails.append(deque(maxlen=1000))
-						self.trails[-1].appendleft(center)
-		
 		masked = cv2.bitwise_and(dataframe, dataframe, mask=fgmask)
 
-		while len(self.trails) > self.maxNumTrails:
-			self.trails.pop(0)
+		# Update norfair tracker
+		tracked_objects = self.tracker.update(detections=norfair_detections)
 
-		for pts in self.trails:
-			for i in range(1, len(pts)-1):
-				# if either of the tracked points are None, ignore them
-				if pts[i - 1] is None or pts[i] is None:
-					continue
-
-				# otherwise, compute the thickness of the line and draw the connecting lines
+		for obj in tracked_objects:
+			if obj.id not in self.tracked_paths:
+				self.tracked_paths[obj.id] = deque(maxlen=1000)
+			
+			# Current centroid
+			center = tuple(obj.estimate[0].astype(int))
+			self.tracked_paths[obj.id].append(center)
+			
+			pts = self.tracked_paths[obj.id]
+			for i in range(1, len(pts)):
 				thickness = 3
-				
 				if self.fullResolution:
-					# full size
-					cv2.line(frame, (int(pts[i-1][0]), int(pts[i-1][1])), (int(pts[i][0]), int(pts[i][1])), (0, 0, 255), thickness, cv2.LINE_AA)
+					cv2.line(frame, pts[i-1], pts[i], (0, 0, 255), thickness, cv2.LINE_AA)
 				else:
-					# reduced size
-					cv2.line(dataframe, (int(pts[i-1][0]), int(pts[i-1][1])), (int(pts[i][0]), int(pts[i][1])), (0, 0, 255), thickness, cv2.LINE_AA)
+					cv2.line(dataframe, pts[i-1], pts[i], (0, 0, 255), thickness, cv2.LINE_AA)
 		
 		# # make colored overlay
 		# colthresh = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
@@ -399,36 +466,59 @@ class VisionSystem:
 			# Add text to the image
 			cv2.putText(frame2, timer_text, (text_x, text_y), font, font_scale, font_color, thickness)
 
-		cv2.imshow('tracking',frame2)
+		if not self.doHeadless:
+			cv2.imshow('tracking',frame2)
 
 		if self.doWrite:
-			paths = []
-			for trail in self.trails:			
-				thistrail = []
-				for i in xrange(1, len(trail)):
-					# if either of the tracked points are None, ignore them
-					thistrail.append((trail[i]))
-				paths.append(thistrail)
+			self.out.write(frame2)
 
-			pathfile = os.path.splitext(outfile)[0]+".json"
-			print("write trails",pathfile)
-			with open(pathfile, 'w') as outfile:
-				json.dump(paths, outfile, indent=2)
+		# Timing
+		self.frame_count += 1
+		frame_time = time.time() - start_time
+		self.total_time += frame_time
+
+		if self.frame_count % 10 == 0:
+			avg_time = self.total_time / self.frame_count
+			fps = 1.0 / avg_time
+			print(f"Frame {self.frame_count}: Avg FPS: {fps:.2f}, Avg time: {avg_time:.4f}s, Resize time: {resize_time:.4f}s")
 
 
 	def reset(self):
-		self.trails.clear()
+		self.tracked_paths.clear()
+		self.tracker = Tracker(distance_function=euclidean_distance, distance_threshold=self.searchRadius)
 
 	def cleanup(self):
 		self.cap1.release()
 
 		if self.doWrite:
 			self.out.release()
+			paths = []
+			for trail in self.tracked_paths.values():			
+				thistrail = []
+				for i in range(1, len(trail)):
+					thistrail.append(trail[i])
+				paths.append(thistrail)
+
+			pathfile = os.path.splitext(self.output_video)[0]+".json"
+			print(f"Write paths json logic completed: {pathfile}")
+			with open(pathfile, 'w') as outf:
+				json.dump(paths, outf, indent=2)
 
 		cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-	vision = VisionSystem()
+	parser = argparse.ArgumentParser(description='Run background foreground segmentation on overhead video', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+	parser.add_argument('--video', type=str, default=VIDEO_FILE, help='Path to input video')
+	parser.add_argument('--output', type=str, default='vision_output.mp4', help='Path to output .mp4 video if writing')
+	parser.add_argument('--write', action='store_true', help='Save tracked image as new .mp4 video')
+	parser.add_argument('--headless', action='store_true', help='Do not display video on screen')
+	parser.add_argument('--minblob', type=float, default=600.0, help='Minimum blob size to track')
+	parser.add_argument('--radius', type=float, default=70.0, help='Maximum search radius for tracking blobs')
+	parser.add_argument('--convexhull', action='store_true', help='Enable proximity convex hulls to merge nearby disjoint blobs')
+	parser.add_argument('--hulldist', type=float, default=150.0, help='Distance threshold to merge blobs into a single hull')
+	args = parser.parse_args()
+
+	vision = VisionSystem(args)
 
 	vision.start()
 
@@ -451,318 +541,3 @@ if __name__ == '__main__':
 	# print "freeing resources"
 
 	vision.cleanup()
-
-
-
-# if __name__ == '__main__':
-# 	# global doWrite, infile, outpath
-# 	# doWrite = False
-
-
-# 	# parser = argparse.ArgumentParser(description='run background forground segmentation on input video',
-# 	# 	formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-# 	# parser.add_argument('--write', default=False, dest='dowrite', action='store_true', help='save tracked image as new video')
-# 	# parser.add_argument('--headless', default=False, dest='doheadless', action='store_true', help='do not display video on screen')
-# 	# parser.add_argument('--undistort', default=False, dest='doundistort', action='store_true', help='undistort circular fisheye')
-# 	# parser.add_argument('--minblob', default=600.0, type=float, help='minimum blob size to track')
-# 	# parser.add_argument('--maxblob', default=12000.0, type=float, help='maximum blob size to track')
-# 	# parser.add_argument('--radius', default=30.0, type=float, help='maximum radius from frame to frame blob track')
-	
-# 	# args = parser.parse_args()
-
-# 	# runtime options
-# 	doWrite = False #args.dowrite
-# 	doHeadless = False #args.doheadless
-# 	doUndistort = False #args.doundistort
-# 	# minBlobSize = args.minblob
-# 	# maxBlobSize = args.maxblob
-# 	# searchRadius = args.radius
-# 	minBlobSize = 600.0
-# 	maxBlobSize = 50000.0
-# 	searchRadius = 70.0
-	
-# 	MAX_LENGTH = 50#20
-
-# 	showMask = False
-# 	fullResolution = True
-# 	# fullResolution = False
-	
-# 	# network fisheye camera
-# 	# cap = cv2.VideoCapture("rtsp://admin:CameraRed@192.168.1.108:554/cam/realmonitor?channel=1&subtype=0")
-# 	cap = cv2.VideoCapture(VIDEO_FILE) # for testing
-
-# 	# cap.set(cv2.CAP_PROP_FRAME_WIDTH, 2880)
-# 	# cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 2160)
-# 	cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1440)
-# 	cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-# 	cap.set(cv2.CAP_PROP_FPS, 15)
-# 	# outputsize = 2160
-# 	# outputsize = 1440
-	
-# 	outputsize = 800
-
-# 	targetWidth = 1280
-# 	targetHeight = 960
-
-# 	# booth camera
-# 	cap2 = cv2.VideoCapture(0) # booth cam is device 0
-
-# 	if cap is None:
-# 		print("didn't work")
-# 		exit(0)
-
-# 	width = cap.get(3)
-# 	height = cap.get(4)
-
-# 	# proportianlly scaled to match fit within 
-# 	outheight = outputsize
-# 	scalef = float(outputsize)/float(height)
-# 	outwidth = int(scalef*width)
-	
-# 	# create mask to mask aroud circular fisheye frame
-# 	circlemask = np.zeros((outheight, outwidth), np.uint8)
-# 	cv2.circle(circlemask, (int(outwidth/2), int(outheight/2)), int(outputsize*0.45), (255, 255, 255), -1)
-
-# 	# Define the codec and create VideoWriter object
-# 	if doWrite:
-# 		exists = True
-# 		count = 0
-
-# 		# outfilename = "{0}_cv{1:03d}.mov".format(os.path.splitext(os.path.basename(infile))[0], count)
-# 		# outfilename = "{0}_cv{1:03d}.mjpg".format(os.path.splitext(os.path.basename(infile))[0], count)
-# 		# outfilename = "{0}.mov".format(os.path.splitext(os.path.basename(infile))[0], count)
-# 		# outfilename = "{0}.mjpg".format(os.path.splitext(os.path.basename(infile))[0], count)
-		
-# 		# outfilename = "{0}.avi".format(os.path.splitext(os.path.basename(infile))[0], count)
-# 		# outfile = os.path.join(outpath, outfilename)
-
-# 		# while exists:
-# 		# 	outfilename = "{0}_cv{1:03d}.avi".format(os.path.splitext(os.path.basename(infile))[0], count)
-# 		# 	outfile = os.path.join(outpath, outfilename)
-# 		# 	exists = os.path.exists(outfile)
-# 		# 	count = count + 1
-
-# 		fourcc = 0
-# 		if fullResolution:
-# 			out = cv2.VideoWriter(outfile,fourcc, 15.0, (int(width), int(height)))
-# 		else:
-# 			out = cv2.VideoWriter(outfile,fourcc, 15.0, (outwidth, outheight))
-
-# 		print("Writing output to", outfile)
-
-# 	if not doHeadless:
-# 		# cv2.namedWindow('tracking', cv2.WINDOW_NORMAL)
-
-# 		# Create a named window
-# 		cv2.namedWindow('tracking', cv2.WND_PROP_FULLSCREEN)
-
-# 		# Set the window to fullscreen
-# 		cv2.setWindowProperty('tracking', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-		
-# 		# cv2.namedWindow('fgmask', cv2.WINDOW_NORMAL)
-# 		# cv2.namedWindow('fgbg', cv2.WINDOW_NORMAL)
-
-# 	# setup background detector
-# 	# http://docs.opencv.org/3.2.0/d2/d55/group__bgsegm.html
-
-# 	# fgbg = cv2.bgsegm.createBackgroundSubtractorMOG(backgroundRatio=0.7)
-# 	# fgbg = cv2.bgsegm.createBackgroundSubtractorMOG(backgroundRatio=0.3)
-# 	# fgbg = cv2.bgsegm.createBackgroundSubtractorGMG(initializationFrames = 50)#30)
-# 	# fgbg = cv2.bgsegm.createBackgroundSubtractorGMG()
-
-# 	# history = 50
-# 	# fgbg = cv2.createBackgroundSubtractorMOG2(history = history, detectShadows=True)
-# 	fgbg = cv2.createBackgroundSubtractorKNN(detectShadows = True) # default history 500 frames
-
-# 	trails = []
-
-# 	while(1):
-
-# 		ret, frame = cap.read()
-
-# 		if frame is None:
-# 			break
-
-# 		dataframe = cv2.resize(frame, (outwidth,outheight))
-
-# 		# print "mask"
-# 		maskedframe = cv2.bitwise_and(dataframe, dataframe, mask = circlemask)
-
-# 		# frame = cv2.fisheye.undistortImage(frame, K, D=D, Knew=Knew)
-
-# 		# ADVANCED BGSEGM METHODS
-# 		fgmask = fgbg.apply(maskedframe)
-
-# 		# print "threshold"
-# 		ret, thresh = cv2.threshold(fgmask, 244, 255, cv2.THRESH_BINARY)
-
-# 		if thresh is None:
-# 			break
-
-# 		# print "dilate"
-# 		thresh = cv2.dilate(thresh, None, iterations=3)
-
-# 		# print "find contours"
-# 		cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[-2]
-
-# 		if len(cnts) > 0:
-# 			(newcnts, areas) = sort_by_area(cnts)
-
-# 			for i in range(len(newcnts)):
-# 				cnt = newcnts[i]
-# 				area = areas[i]
-
-# 				if area > minBlobSize and area < maxBlobSize:
-# 					if fullResolution:
-# 						largecnt = []
-# 						for point in cnt:
-# 							largepoint = point / scalef
-# 							largecnt.append(largepoint)
-# 						largecnt = np.array(largecnt)
-# 						cnt = np.array(largecnt).reshape((-1,1,2)).astype(np.int32)
-# 						cv2.drawContours(frame, [cnt], 0, (0, 255, 0), int(width/213))
-						
-# 					else:
-# 						cv2.drawContours(frame, [cnt], 0, (0, 255, 0), 3)
-
-# 					# perimeter = cv2.arcLength(cnt,True)
-
-# 					M = cv2.moments(cnt.astype(np.float32))
-
-# 					# center of mass
-# 					cx = M['m10']/M['m00']
-# 					cy = M['m01']/M['m00']
-
-# 					center = (cx, cy)
-# 					foundTrail = False
-
-# 					for trail in trails:
-# 						if len(trail) == 0:
-# 							trail.appendleft(center)
-# 							break
-
-# 						dist = np.linalg.norm(np.array(trail[0])-np.array(center))
-
-# 						if dist < searchRadius:
-# 							trail.appendleft(center)
-# 							foundTrail = True
-
-# 					if not foundTrail:
-# 						trails.append(deque(maxlen=10000))
-# 						trails[-1].appendleft(center)
-
-# 		masked = cv2.bitwise_and(dataframe, dataframe, mask=fgmask)
-
-# 		while len(trails) > MAX_LENGTH:
-# 			trails.pop(0)
-
-# 		for pts in trails:
-# 			for i in range(1, len(pts)-1):
-# 				# if either of the tracked points are None, ignore them
-# 				if pts[i - 1] is None or pts[i] is None:
-# 					continue
-
-# 				# otherwise, compute the thickness of the line and draw the connecting lines
-# 				thickness = 3
-				
-# 				if fullResolution:
-# 					# full size
-# 					cv2.line(frame, (int(pts[i-1][0]), int(pts[i-1][1])), (int(pts[i][0]), int(pts[i][1])), (0, 0, 255), thickness, cv2.LINE_AA)
-# 				else:
-# 					# reduced size
-# 					cv2.line(dataframe, (int(pts[i-1][0]), int(pts[i-1][1])), (int(pts[i][0]), int(pts[i][1])), (0, 0, 255), thickness, cv2.LINE_AA)
-
-
-# 		# # make colored overlay
-# 		# colthresh = cv2.cvtColor(thresh, cv2.COLOR_GRAY2BGR)
-# 		# cv2.addWeighted(colthresh, 0.5, frame, 0.5, 0.0, frame)
-
-# 		# # make colored overlay
-# 		if showMask:
-# 			colthresh = cv2.cvtColor(circlemask, cv2.COLOR_GRAY2BGR)
-# 			cv2.addWeighted(colthresh, 0.5, frame, 0.5, 0.0, frame)
-
-# 		masked = cv2.resize(masked, (outwidth,outheight))
-# 		thresh = cv2.resize(thresh, (outwidth,outheight))
-# 		fgmask = cv2.resize(fgmask, (outwidth,outheight))
-		
-# 		if not fullResolution:
-# 			frame = cv2.resize(frame, (outwidth,outheight))
-# 			# Define the translation matrix
-
-# 		frame2 = resize_to_bounding_box(frame, targetWidth, targetHeight)
-		
-# 		frame2 = crop_to_center_square(frame2)
-		
-# 		xoffset = targetWidth - frame2.shape[0]
-
-# 		# pad the right side of the image to make it the right size
-# 		frame2 = cv2.copyMakeBorder(
-# 			frame2,
-# 			0,
-# 			0,
-# 			0,
-# 			xoffset,
-# 			cv2.BORDER_CONSTANT,
-# 			value=[0, 0, 0]  # Black color in BGR
-# 		)
-		
-# 		# print(frame2.shape)
-# 		ret, ir_frame = cap2.read()
-
-# 		if ir_frame is not None:
-# 			ir_frame = cv2.rotate(ir_frame, cv2.ROTATE_90_CLOCKWISE)
-# 			ir_frame2 = resize_to_bounding_box(ir_frame, targetWidth, targetHeight)
-# 			ir_frame2 = center_crop(ir_frame2, targetHeight, xoffset)
-
-# 			# copy cam2 into right hand side of main feed
-# 			frame2[:, -1*ir_frame2.shape[1]:] = ir_frame2[:,:]
-
-# 		if not doHeadless:
-# 			cv2.imshow('tracking',frame2)
-# 			# cv2.imshow('fgbg',fgmask)
-# 			# cv2.imshow('mask',thresh)
-
-# 		if doWrite:
-# 			try:
-# 				out.write(frame)
-# 			except:
-# 				print("Error: video frame did not write")
-# 			# out.write(frame)
-
-# 		k = cv2.waitKey(1)
-# 		if k == 27:
-# 		   break
-# 		elif k == ord('r'):
-# 			trails.clear()
-# 			# fgbg.clear()
-# 		else:
-# 			if k != -1:  # If a key is pressed
-# 				# Convert the ASCII value to a character
-# 				char = chr(k)
-# 				print(f'Pressed key: {char}')
-
-# 	print("done. ")
-# 	# print "freeing resources"
-
-# 	if doWrite:
-# 		paths = []
-# 		for trail in trails:
-# 			thistrail = []
-# 			for i in xrange(1, len(trail)):
-# 				# if either of the tracked points are None, ignore them
-# 				thistrail.append((trail[i]))
-# 			paths.append(thistrail)
-
-# 		pathfile = os.path.splitext(outfile)[0]+".json"
-# 		print("write trails",pathfile)
-# 		with open(pathfile, 'w') as outfile:
-# 			json.dump(paths, outfile, indent=2)
-
-# 	cap.release()
-
-# 	if doWrite:
-# 		out.release()
-
-# 	cv2.destroyAllWindows()

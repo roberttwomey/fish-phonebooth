@@ -284,7 +284,7 @@ if __name__ == '__main__':
 
 	booth = PhoneBooth()
 
-	vision = VisionSystem()
+	vision = VisionSystem(None)
 	vision.start()
 
 	last_key = None
